@@ -5,26 +5,159 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+Inicialmente, se obtienen las librarías necesarias para el desarrollo del proyecto.
+
+```{r librerías}
+pacman::p_load(ggplot2)
 ```
 
-## R Markdown
+Se prosigue descargando las bases de datos correspondientes.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r BD}
+hungria <-
+  read.table(
+    "data/reprocessed.hungarian.data",
+    header = FALSE,
+    sep = " ",
+    stringsAsFactors = FALSE
+  )
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+suiza <-
+  read.table(
+    "data/processed.switzerland.data",
+    header = FALSE,
+    sep = ",",
+    stringsAsFactors = FALSE
+  )
 
-```{r cars}
-summary(cars)
+lb <-
+  read.table(
+    "data/processed.va.data",
+    header = FALSE,
+    sep = ",",
+    stringsAsFactors = FALSE
+  )
+
+cleveland <-
+  read.table(
+    "data/processed.cleveland.data",
+    header = FALSE,
+    sep = ",",
+    stringsAsFactors = FALSE
+  )
 ```
 
-## Including Plots
+Luego, se ponen los nombres de las variables para identificarlas.
 
-You can also embed plots, for example:
+```{r nombres_col}
+colnames(hungria) <-
+  c(
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "restecg",
+    "thalach",
+    "exang",
+    "oldpeak",
+    "slope",
+    "ca",
+    "thal",
+    "num"
+  )
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+colnames(cleveland) <-
+  c(
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "restecg",
+    "thalach",
+    "exang",
+    "oldpeak",
+    "slope",
+    "ca",
+    "thal",
+    "num"
+  )
+
+colnames(lb) <-
+  c(
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "restecg",
+    "thalach",
+    "exang",
+    "oldpeak",
+    "slope",
+    "ca",
+    "thal",
+    "num"
+  )
+
+colnames(suiza) <-
+  c(
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "restecg",
+    "thalach",
+    "exang",
+    "oldpeak",
+    "slope",
+    "ca",
+    "thal",
+    "num"
+  )
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Luego, se corrigen los valores "?" presentes en las bases de datos.
+
+```{r nulos}
+for (i in 1:14) {
+  lb[, i] <- ifelse(lb[, i] == "?", NA, lb[, i])
+  cleveland[, i] <-
+    ifelse(cleveland[, i] == "?", NA, cleveland[, i])
+  hungria[, i] <- ifelse(hungria[, i] == "?", NA, hungria[, i])
+  hungria[, i] <- ifelse(hungria[, i] == -9, NA, hungria[, i])
+  suiza[, i] <- ifelse(suiza[, i] == "?", NA, suiza[, i])
+}
+```
+
+Luego, es importante notar que todos los datos son numéricos, por lo que se hacen las correcciones necesarias.
+
+```{r tipo_columna}
+cleveland <- as.data.frame(sapply(cleveland, as.numeric))
+lb <- as.data.frame(sapply(lb, as.numeric))
+suiza <- as.data.frame(sapply(suiza, as.numeric))
+hungria <- as.data.frame(sapply(hungria, as.numeric))
+```
+
+Ahora, procedemos a ver la cantidad de nulos por columna en cada base de datos.
+
+```{r nulos}
+# Creamos el DataFrame
+nulos <-
+  data.frame(
+    "cleveland" = colSums(is.na(cleveland)),
+    "long_beach" = colSums(is.na(lb)),
+    "suiza" = colSums(is.na(suiza)),
+    "hungria" = colSums(is.na(hungria))
+  )
+
+# Cambiamos el nombre de las filas
+rownames(nulos) <- colnames(cleveland)
+```
+
