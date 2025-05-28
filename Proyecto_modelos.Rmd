@@ -234,13 +234,60 @@ eeuu <- full_join(cleveland, lb)
 # Se corrige la variable respuesta en ambos casos
 europa <- europa %>% mutate(num = ifelse(num >= 1, 1, 0))
 eeuu <- eeuu %>% mutate(num = ifelse(num >= 1, 1, 0))
+
+# La variable num es un factor
+eeuu$num <- factor(eeuu$num, levels = c(0, 1))
+europa$num <- factor(europa$num, levels = c(0, 1))
 ```
 
 ## Análisis exploratorio
 
 ### Columnas numéricas de EEUU
 
-A
+Inicialmente, se pretende observar las variables de forma individual.
+
+```{r var_individual, warning = FALSE}
+# Edad separada por diagnóstico
+ggplot(eeuu, aes(x = num, y = age, fill = num)) +
+  geom_boxplot() +
+  labs(x = 'Diagnóstico', y = 'Edad (Años)') +
+  scale_x_discrete("Diagnóstico", labels = c("Sano", "Enfermo")) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Presión arterial en reposo al momento de ingreso al hospital, separada por diagnóstico
+ggplot(eeuu, aes(x = num, y = trestbps, fill = num)) +
+  geom_boxplot() +
+  labs(x = 'Diagnóstico', y = 'Presión arterial (Milímetros de mercurio)') +
+  scale_x_discrete("Diagnóstico", labels = c("Sano", "Enfermo")) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Colesterol separado por diagnóstico
+ggplot(eeuu, aes(x = num, y = chol, fill = num)) +
+  geom_boxplot() +
+  labs(x = 'Diagnóstico', y = 'Colesterol (Miligramos por 100 mililitros)') +
+  scale_x_discrete("Diagnóstico", labels = c("Sano", "Enfermo")) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Máxima frecuencia cardíaca, separada por diagnóstico
+ggplot(eeuu, aes(x = num, y = thalach, fill = num)) +
+  geom_boxplot() +
+  labs(x = 'Diagnóstico', y = 'Máxima frecuencia cardíaca') +
+  scale_x_discrete("Diagnóstico", labels = c("Sano", "Enfermo")) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Depresión del segmento ST inducida por el ejercicio en relación con el reposo
+ggplot(eeuu, aes(x = num, y = oldpeak, fill = num)) +
+  geom_boxplot() +
+  labs(x = 'Diagnóstico', y = 'Depresión del segmento ST') +
+  scale_x_discrete("Diagnóstico", labels = c("Sano", "Enfermo")) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
 
 ### Columnas numéricas de Europa
 
