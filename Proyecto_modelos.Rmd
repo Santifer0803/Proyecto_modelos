@@ -286,6 +286,39 @@ ggplot(eeuu, aes(x = num, y = oldpeak, fill = num)) +
   scale_x_discrete("Diagnóstico", labels = c("Sano", "Enfermo")) +
   theme_minimal() +
   theme(legend.position = "none")
+
+# Ahora, se obtienen los porcentajes de vasos sanguineos coloreados por fluoroscopía, separados por diagnóstico
+porcentajes_ca <- rep(0, 8)
+
+# Se llenan los porcentajes con ciclos
+for (i in 0:1) {
+  for (j in 0:3) {
+    porcentajes_ca[[(4 * i + 1 + j)]] <- mean((eeuu$ca == j) * (eeuu$num == i), na.rm = TRUE)
+  }
+}
+
+# Se crea un DataFrame para graficar
+clases_ca <- data.frame("diagnostico" = c("0", "0", "0", "0", "1", "1", "1", "1"),
+                        "ca" = c(0, 1, 2, 3, 0, 1, 2, 3),
+                        "porcentajes" = porcentajes_ca)
+
+# Gráfico de vasos sanguineos coloreados por fluoroscopía, separados por diagnóstico
+ggplot(clases_ca, aes(x = ca, y = porcentajes, fill = diagnostico)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(
+    name = "Diagnóstico",
+    values = c(
+      "0" = "#006992",
+      "1" = "#00BC7F"
+    ),
+    labels = c(
+      "0" = "Sano",
+      "1" = "Enfermo"
+    )
+  ) +
+  labs(x = "Vasos sanguineos coloreados",
+       y = "Porcentaje") +
+  theme_minimal()
 ```
 
 
