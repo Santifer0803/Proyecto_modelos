@@ -127,7 +127,7 @@ colnames(suiza) <-
 
 Luego, se corrigen los valores "?" presentes en las bases de datos.
 
-```{r nulos}
+```{r signos_pregunta}
 for (i in 1:14) {
   lb[, i] <- ifelse(lb[, i] == "?", NA, lb[, i])
   cleveland[, i] <-
