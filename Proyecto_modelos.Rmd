@@ -8,8 +8,10 @@ output: html_document
 Inicialmente, se obtienen las librarías necesarias para el desarrollo del proyecto.
 
 ```{r librerías}
-pacman::p_load(ggplot2)
+pacman::p_load(tidyverse)
 ```
+
+# Bases desagregadas
 
 Se prosigue descargando las bases de datos correspondientes.
 
@@ -139,11 +141,17 @@ for (i in 1:14) {
 Luego, es importante notar que todos los datos son numéricos, por lo que se hacen las correcciones necesarias.
 
 ```{r tipo_columna}
+# Datos numéricos
 cleveland <- as.data.frame(sapply(cleveland, as.numeric))
 lb <- as.data.frame(sapply(lb, as.numeric))
 suiza <- as.data.frame(sapply(suiza, as.numeric))
 hungria <- as.data.frame(sapply(hungria, as.numeric))
+
+# Se elimina la observación nula de la base de Hungría
+hungria <- hungria[-295,]
 ```
+
+## Porcentajes de nulos
 
 Ahora, procedemos a ver la cantidad de nulos por columna en cada base de datos.
 
@@ -159,5 +167,90 @@ nulos <-
 
 # Cambiamos el nombre de las filas
 rownames(nulos) <- colnames(cleveland)
+
+# Ponemos en porcentajes
+nulos <-
+  nulos / matrix(c(303, 200, 123, 295),
+                 ncol = 4,
+                 nrow = 14,
+                 byrow = TRUE)
+
+# Se omiten las variables que no tienen nulos en ninguna base de datos
+nulos <- nulos[c(4:13),]
+
+# Se pone una variable con el nombre de las variables
+nulos$variable <- rownames(nulos)
 ```
+
+Ahora, se hace un gráfico con los nulos, separado por base de datos.
+
+```{r grafico_nulos}
+# Se pone en formato largo
+nulos <- nulos %>%
+  pivot_longer(cols = -variable,
+               names_to = "Origen",
+               values_to = "Nulos")
+
+# Se crea el gráfico
+ggplot(nulos, aes(x = variable, y = Nulos, fill = Origen)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(
+    values = c(
+      "cleveland" = "#4A0A5D",
+      "long_beach" = "#006992",
+      "suiza" = "#00BC7F",
+      "hungria" = "#D6E12D"
+    ),
+    labels = c(
+      "cleveland" = "Cleveland",
+      "long_beach" = "Long Beach",
+      "suiza" = "Suiza",
+      "hungria" = "Hungría"
+    )
+  ) +
+  labs(x = "Variable",
+       y = "Porcentaje de nulos") +
+  theme_minimal()
+
+# Se elimina la base de nulos, pues ya no se ocupa
+rm(nulos)
+```
+
+# Bases agregadas
+
+Una vez vistos los nulos, se procede a agregar un identificador, para ver el origen de las observaciones. Luego, se juntan las bases de Estados Unidos (*Cleveland* y *Long beach*) y las de Europa (*Suiza* y *Hungría*) para tener datos más compactos.
+
+```{r bases_agregadas, message = FALSE}
+# Identificador por base
+cleveland <- cleveland %>% mutate(origen = "Cleveland")
+hungria <- hungria %>% mutate(origen = "Hungria")
+lb <- lb %>% mutate(origen = "Long Beach")
+suiza <- suiza %>% mutate(origen = "Suiza")
+
+# Se juntan las bases agregadas
+europa <- full_join(hungria, suiza)
+eeuu <- full_join(cleveland, lb)
+
+# Se corrige la variable respuesta en ambos casos
+europa <- europa %>% mutate(num = ifelse(num >= 1, 1, 0))
+eeuu <- eeuu %>% mutate(num = ifelse(num >= 1, 1, 0))
+```
+
+## Análisis exploratorio
+
+### Columnas numéricas de EEUU
+
+A
+
+### Columnas numéricas de Europa
+
+A
+
+### Variables categóricas
+
+A
+
+### Varianzas y correlaciones
+
+A
 
