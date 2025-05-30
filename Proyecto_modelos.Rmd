@@ -1,5 +1,5 @@
 ---
-title: "Proyecto_modelos"
+title: "Proyecto Modelos"
 author: "Alejandro Brenes, Santiago Fernández, Eyeri Méndez y Erick Venegas"
 date: "`r Sys.Date()`"
 output: html_document
@@ -8,7 +8,9 @@ output: html_document
 Inicialmente, se obtienen las librarías necesarias para el desarrollo del proyecto.
 
 ```{r librerías}
-pacman::p_load(tidyverse)
+pacman::p_load(tidyverse,
+               dplyr,
+               knitr)
 ```
 
 # Bases desagregadas
@@ -52,8 +54,7 @@ cleveland <-
 Luego, se ponen los nombres de las variables para identificarlas.
 
 ```{r nombres_col}
-colnames(hungria) <-
-  c(
+nombres.col <- c(
     "age",
     "sex",
     "cp",
@@ -70,62 +71,18 @@ colnames(hungria) <-
     "num"
   )
 
-colnames(cleveland) <-
-  c(
-    "age",
-    "sex",
-    "cp",
-    "trestbps",
-    "chol",
-    "fbs",
-    "restecg",
-    "thalach",
-    "exang",
-    "oldpeak",
-    "slope",
-    "ca",
-    "thal",
-    "num"
-  )
+colnames(hungria) <- nombres.col
+  
+colnames(cleveland) <- nombres.col
 
-colnames(lb) <-
-  c(
-    "age",
-    "sex",
-    "cp",
-    "trestbps",
-    "chol",
-    "fbs",
-    "restecg",
-    "thalach",
-    "exang",
-    "oldpeak",
-    "slope",
-    "ca",
-    "thal",
-    "num"
-  )
+colnames(lb) <- nombres.col
 
-colnames(suiza) <-
-  c(
-    "age",
-    "sex",
-    "cp",
-    "trestbps",
-    "chol",
-    "fbs",
-    "restecg",
-    "thalach",
-    "exang",
-    "oldpeak",
-    "slope",
-    "ca",
-    "thal",
-    "num"
-  )
+colnames(suiza) <- nombres.col
+
+rm(nombres.col)
 ```
 
-Luego, se corrigen los valores "?" presentes en las bases de datos.
+Posteriormente, se corrigen los valores "?" presentes en las bases de datos.
 
 ```{r signos_pregunta}
 for (i in 1:14) {
@@ -138,7 +95,7 @@ for (i in 1:14) {
 }
 ```
 
-Luego, es importante notar que todos los datos son numéricos, por lo que se hacen las correcciones necesarias.
+Seguidamente, es importante notar que todos los datos son numéricos, por lo que se hacen las correcciones necesarias.
 
 ```{r tipo_columna}
 # Datos numéricos
@@ -182,7 +139,7 @@ nulos <- nulos[c(4:13),]
 nulos$variable <- rownames(nulos)
 ```
 
-Ahora, se hace un gráfico con los nulos, separado por base de datos.
+Se procede a hacer un gráfico con el porcentaje de nulos, separado por base de datos.
 
 ```{r grafico_nulos}
 # Se pone en formato largo
@@ -218,7 +175,7 @@ rm(nulos)
 
 # Bases agregadas
 
-Una vez vistos los nulos, se procede a agregar un identificador, para ver el origen de las observaciones. Luego, se juntan las bases de Estados Unidos (*Cleveland* y *Long beach*) y las de Europa (*Suiza* y *Hungría*) para tener datos más compactos.
+Una vez vistos los nulos, se procede a agregar un identificador para ver el origen de las observaciones. Luego, se juntan las bases de Estados Unidos (*Cleveland* y *Long beach*) y las de Europa (*Suiza* y *Hungría*) para tener datos más compactos.
 
 ```{r bases_agregadas, message = FALSE}
 # Identificador por base
@@ -240,7 +197,7 @@ eeuu$num <- factor(eeuu$num, levels = c(0, 1))
 europa$num <- factor(europa$num, levels = c(0, 1))
 ```
 
-## Análisis exploratorio
+## Análisis exploratorio de datos
 
 ### Columnas numéricas de EEUU
 
@@ -464,5 +421,72 @@ A
 
 ### Varianzas y correlaciones
 
-A
+Primero se crean diferentes gráficos para visualizar el comportamiento de las varianzas de las variables presentes en las bases de datos.
+
+```{r Varianzas, message = FALSE}
+# Se crea una columna en cada base para diferenciar de qué región proviene cada observación
+eeuu$region <- "EEUU"
+europa$region <- "Europa"
+
+# Se unen las dos bases de Estsados Unidos y Europa
+df.total <- rbind(eeuu, europa)
+
+# Se elimina la columna de región
+eeuu <- subset(eeuu, select = -region)
+europa <- subset(europa, select = -region)
+
+# Gráfico de densidad de edades por región y nivel (num)
+ggplot(df.total, aes(x = age, fill = factor(num))) +
+  geom_density(alpha = 0.5) +
+  facet_wrap( ~ region) +
+  labs(
+    x = "Edad",
+    y = "Densidad",
+    fill = "Diagnóstico"
+  ) +
+  theme_minimal()
+
+# Gráfico de cajas para comparar edades por región y nivel (num)
+ggplot(df.total, aes(x = region, y = age, fill = region)) +
+  geom_boxplot() +
+  facet_grid( ~ num) +
+  labs(
+    x = "Región",
+    y = "Edad",
+    fill = "Región"
+  ) +
+  theme_minimal()
+
+# Se guardan los nombres de las columnas numéricas de las bases
+cols.num <- names(eeuu)[sapply(eeuu, is.numeric)]
+
+# Se calcula la varianza de las columnas numéricas en las bases, ignorando los NA
+vars.eeuu <- sapply(eeuu[, cols.num], var, na.rm = TRUE)
+vars.europa <- sapply(europa[, cols.num], var, na.rm = TRUE)
+
+# Se crea un DataFrame con el nombre de la variable y las varianzas correspondientes a cada región
+df.var <- data.frame(variable = cols.num,
+                     EEUU = vars.eeuu,
+                     Europa = vars.europa,
+                     row.names = NULL)
+
+# Se redondean las varianzas a dos decimales y se ordena el DataFrame descendientemente según la varianza en EEUU
+df.tabla <- df.var %>%
+  mutate(across(c(EEUU, Europa), \(x) round(x, digits = 2))) %>%
+  arrange(desc(EEUU))
+
+# Se genera la tabla resultante
+kable(df.tabla, caption = "Varianzas de las covariables por región",
+      align = "lcc")
+
+# Se eliminan las variables innecesarias
+rm(df.var, df.tabla, vars.eeuu, vars.europa)
+```
+
+Seguidamente, se procede a observar las correlaciones de Pearson de estas variables.
+
+```{r Correlaciones}
+
+```
+
 
