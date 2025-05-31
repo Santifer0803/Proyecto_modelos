@@ -423,52 +423,86 @@ A
 
 Primero se crean diferentes gráficos para visualizar el comportamiento de las varianzas de las variables presentes en las bases de datos.
 
-```{r Varianzas, message = FALSE}
+```{r Varianzas, message = FALSE, warning = FALSE}
 # Se crea una columna en cada base para diferenciar de qué región proviene cada observación
 eeuu$region <- "EEUU"
 europa$region <- "Europa"
 
-# Se unen las dos bases de Estsados Unidos y Europa
+# Se unen las dos bases de Estados Unidos y Europa
 df.total <- rbind(eeuu, europa)
 
-# Se elimina la columna de región
+# Se guardan los nombres de las columnas numéricas de las bases
+# Excepto la de ca, ya que presenta casi un 100% de valores nulos
+cols.num <- names(eeuu)[(names(eeuu) %in% c("age", "trestbps", "chol", 
+                                            "thalach", "oldpeak"))]
+
+# Se filtran solo las variables numéricas y las de región y diagnóstico
+df.total <- df.total[c(cols.num, "num", "region")]
+
+# Se elimina la columna de región de los DataFrames originales
 eeuu <- subset(eeuu, select = -region)
 europa <- subset(europa, select = -region)
 
-# Gráfico de densidad de edades por región y nivel (num)
+# Gráficos de densidad de cada variable por región y diagnóstico
+
+## Edad
 ggplot(df.total, aes(x = age, fill = factor(num))) +
   geom_density(alpha = 0.5) +
-  facet_wrap( ~ region) +
-  labs(
-    x = "Edad",
-    y = "Densidad",
-    fill = "Diagnóstico"
-  ) +
+  facet_wrap(~ region) +
+  labs(x = "Edad", y = "Densidad", fill = "Diagnóstico") +
+  scale_fill_manual(values = c("0" = "skyblue2", "1" = "pink2"),
+                    labels = c("0" = "Sano", "1" = "Enfermo")) +
   theme_minimal()
 
-# Gráfico de cajas para comparar edades por región y nivel (num)
-ggplot(df.total, aes(x = region, y = age, fill = region)) +
-  geom_boxplot() +
-  facet_grid( ~ num) +
-  labs(
-    x = "Región",
-    y = "Edad",
-    fill = "Región"
-  ) +
+## Presión arterial en reposo
+ggplot(df.total, aes(x = trestbps, fill = factor(num))) +
+  geom_density(alpha = 0.5) +
+  facet_wrap(~ region) +
+  labs(x = "Presión arterial en reposo", y = "Densidad", fill = "Diagnóstico") +
+  scale_fill_manual(values = c("0" = "skyblue2", "1" = "pink2"),
+                    labels = c("0" = "Sano", "1" = "Enfermo")) +
   theme_minimal()
 
-# Se guardan los nombres de las columnas numéricas de las bases
-cols.num <- names(eeuu)[sapply(eeuu, is.numeric)]
+## Colesterol
+ggplot(df.total, aes(x = chol, fill = factor(num))) +
+  geom_density(alpha = 0.5) +
+  facet_wrap(~ region) +
+  labs(x = "Colesterol", y = "Densidad", fill = "Diagnóstico") +
+  scale_fill_manual(values = c("0" = "skyblue2", "1" = "pink2"),
+                    labels = c("0" = "Sano", "1" = "Enfermo")) +
+  theme_minimal()
 
-# Se calcula la varianza de las columnas numéricas en las bases, ignorando los NA
+## Máxima frecuencia cardíaca
+ggplot(df.total, aes(x = thalach, fill = factor(num))) +
+  geom_density(alpha = 0.5) +
+  facet_wrap(~ region) +
+  labs(x = "Máxima frecuencia cardíaca", y = "Densidad", fill = "Diagnóstico") +
+  scale_fill_manual(values = c("0" = "skyblue2", "1" = "pink2"),
+                    labels = c("0" = "Sano", "1" = "Enfermo")) +
+  theme_minimal()
+
+## Depresión del segmento ST
+ggplot(df.total, aes(x = oldpeak, fill = factor(num))) +
+  geom_density(alpha = 0.5) +
+  facet_wrap(~ region) +
+  labs(x = "Depresión del segmento ST", y = "Densidad", fill = "Diagnóstico") +
+  scale_fill_manual(values = c("0" = "skyblue2", "1" = "pink2"),
+                    labels = c("0" = "Sano", "1" = "Enfermo")) +
+  theme_minimal()
+
+# Varianzas de las variables
+
+# Se calcula la varianza de las variables numéricas, ignorando los NA
 vars.eeuu <- sapply(eeuu[, cols.num], var, na.rm = TRUE)
 vars.europa <- sapply(europa[, cols.num], var, na.rm = TRUE)
 
-# Se crea un DataFrame con el nombre de la variable y las varianzas correspondientes a cada región
-df.var <- data.frame(variable = cols.num,
-                     EEUU = vars.eeuu,
-                     Europa = vars.europa,
-                     row.names = NULL)
+# Se crea un DataFrame con el nombre de cada variable y las varianzas correspondientes a cada región
+df.var <- data.frame(
+  variable = cols.num,
+  EEUU = vars.eeuu,
+  Europa = vars.europa,
+  row.names = NULL
+)
 
 # Se redondean las varianzas a dos decimales y se ordena el DataFrame descendientemente según la varianza en EEUU
 df.tabla <- df.var %>%
@@ -476,11 +510,10 @@ df.tabla <- df.var %>%
   arrange(desc(EEUU))
 
 # Se genera la tabla resultante
-kable(df.tabla, caption = "Varianzas de las covariables por región",
-      align = "lcc")
+kable(df.tabla, caption = "Varianzas de las covariables por región", align = "lcc")
 
 # Se eliminan las variables innecesarias
-rm(df.var, df.tabla, vars.eeuu, vars.europa)
+rm(df.var, df.tabla, cols.num, vars.eeuu, vars.europa)
 ```
 
 Seguidamente, se procede a observar las correlaciones de Pearson de estas variables.
