@@ -10,7 +10,8 @@ Inicialmente, se obtienen las librarías necesarias para el desarrollo del proye
 ```{r librerías}
 pacman::p_load(tidyverse,
                dplyr,
-               knitr)
+               knitr,
+               corrplot)
 ```
 
 # Bases desagregadas
@@ -519,7 +520,45 @@ rm(df.var, df.tabla, cols.num, vars.eeuu, vars.europa)
 Seguidamente, se procede a observar las correlaciones de Pearson de estas variables.
 
 ```{r Correlaciones}
+# Se crean DataFrames auxiliares de las bases originales quitando las columnas de ca y origen
+eeuu.aux <- eeuu[, -c(12, 15)]
+europa.aux <- europa[, -c(12, 15)]
 
+# Se convierte la variable de diagnóstico a tipo numérico en ambas bases auxiliares
+eeuu.aux$num <- as.numeric(as.character(eeuu$num))
+europa.aux$num <- as.numeric(as.character(europa$num))
+
+# Se calcula la matriz de correlaciones para la base de EEUU
+cor.matrix <- cor(eeuu.aux, use = "complete.obs")
+
+# Se grafica la matriz de correlaciones anterior
+corrplot(
+  cor.matrix,
+  method = "color",
+  type = "upper",
+  tl.cex = 0.8,
+  order = "original",
+  addCoef.col = "black",
+  number.cex = 0.7,
+  number.digits = 2
+)
+
+# Se calcula la matriz de correlaciones para la base de Europa
+cor.matrix <- cor(europa.aux, use = "complete.obs")
+
+# Se grafica la matriz de correlaciones para la base de Europa
+corrplot(
+  cor.matrix,
+  method = "color",
+  type = "upper",
+  tl.cex = 0.8,
+  order = "original",
+  addCoef.col = "black",
+  number.cex = 0.7,
+  number.digits = 2
+)
+
+# Se eliminan variables innecesarias
+rm(eeuu.aux, europa.aux, cor.matrix)
 ```
-
 
