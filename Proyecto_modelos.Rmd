@@ -414,7 +414,212 @@ ggplot(eeuu, aes(x = chol, y = oldpeak, color = num)) +
 
 ### Columnas numéricas de Europa
 
-A
+Se procede a recrear los escenarios para el caso de los países europeos. 
+```{r var_individual, warning = FALSE}
+# Edad separada por diagnóstico
+ggplot(europa, aes(x = num, y = age, fill = num)) +
+  geom_boxplot() +
+  labs(x = 'Diagnóstico', y = 'Edad (Años)') +
+  scale_x_discrete("Diagnóstico", labels = c("Sano", "Enfermo")) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Presión arterial en reposo al momento de ingreso al hospital, separada por diagnóstico
+ggplot(europa, aes(x = num, y = trestbps, fill = num)) +
+  geom_boxplot() +
+  labs(x = 'Diagnóstico', y = 'Presión arterial (Milímetros de mercurio)') +
+  scale_x_discrete("Diagnóstico", labels = c("Sano", "Enfermo")) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Colesterol separado por diagnóstico
+ggplot(europa, aes(x = num, y = chol, fill = num)) +
+  geom_boxplot() +
+  labs(x = 'Diagnóstico', y = 'Colesterol (Miligramos por 100 mililitros)') +
+  scale_x_discrete("Diagnóstico", labels = c("Sano", "Enfermo")) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Máxima frecuencia cardíaca, separada por diagnóstico
+ggplot(europa, aes(x = num, y = thalach, fill = num)) +
+  geom_boxplot() +
+  labs(x = 'Diagnóstico', y = 'Máxima frecuencia cardíaca') +
+  scale_x_discrete("Diagnóstico", labels = c("Sano", "Enfermo")) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Depresión del segmento ST inducida por el ejercicio en relación con el reposo
+ggplot(europa, aes(x = num, y = oldpeak, fill = num)) +
+  geom_boxplot() +
+  labs(x = 'Diagnóstico', y = 'Depresión del segmento ST') +
+  scale_x_discrete("Diagnóstico", labels = c("Sano", "Enfermo")) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Ahora, se obtienen los porcentajes de vasos sanguineos coloreados por fluoroscopía, separados por diagnóstico
+porcentajes_ca_europa <- rep(0, 8)
+
+# Se llenan los porcentajes con ciclos
+for (i in 0:1) {
+  for (j in 0:3) {
+    porcentajes_ca_europa[[(4 * i + 1 + j)]] <-
+      mean((europa$ca == j) * (europa$num == i), na.rm = TRUE)
+  }
+}
+
+# Se crea un DataFrame para graficar
+clases_ca_europa <-
+  data.frame(
+    "diagnostico" = c("0", "0", "0", "0", "1", "1", "1", "1"),
+    "ca" = c(0, 1, 2, 3, 0, 1, 2, 3),
+    "porcentajes" = porcentajes_ca_europa
+  )
+
+# Gráfico de vasos sanguineos coloreados por fluoroscopía, separados por diagnóstico
+ggplot(clases_ca_europa, aes(x = ca, y = porcentajes, fill = diagnostico)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(
+    name = "Diagnóstico",
+    values = c("0" = "#006992",
+               "1" = "#00BC7F"),
+    labels = c("0" = "Sano",
+               "1" = "Enfermo")
+  ) +
+  labs(x = "Vasos sanguineos coloreados",
+       y = "Porcentaje") +
+  theme_minimal()
+
+# Se eliminan las variables innecesarias
+rm(porcentajes_ca_europa, clases_ca_europa, i, j)
+```
+```{r comparacion_variables, warning = FALSE}
+# Comparación entre edad y presión arterial
+ggplot(europa, aes(x = age, y = trestbps, color = num)) +
+  geom_point() +
+  scale_color_manual(
+    name = "Diagnóstico",
+    values = c("0" = "#006992",
+               "1" = "#00BC7F"),
+    labels = c("0" = "Sano",
+               "1" = "Enfermo")
+  ) +
+  labs(x = "Edad",
+       y = "Presión arterial (Milímetros de mercurio)") +
+  theme_minimal()
+
+# Comparación entre edad y colesterol
+ggplot(europa, aes(x = age, y = chol, color = num)) +
+  geom_point() +
+  scale_color_manual(
+    name = "Diagnóstico",
+    values = c("0" = "#006992",
+               "1" = "#00BC7F"),
+    labels = c("0" = "Sano",
+               "1" = "Enfermo")
+  ) +
+  labs(x = "Edad",
+       y = "Colesterol (Miligramos por 100 mililitros)") +
+  theme_minimal()
+
+# Comparación entre edad y máxima frecuencia cardíaca
+ggplot(europa, aes(x = age, y = thalach, color = num)) +
+  geom_point() +
+  scale_color_manual(
+    name = "Diagnóstico",
+    values = c("0" = "#006992",
+               "1" = "#00BC7F"),
+    labels = c("0" = "Sano",
+               "1" = "Enfermo")
+  ) +
+  labs(x = "Edad",
+       y = "Máxima frecuencia cardíaca") +
+  theme_minimal()
+
+# Comparación entre edad y depresión del segmento ST
+ggplot(europa, aes(x = age, y = oldpeak, color = num)) +
+  geom_point() +
+  scale_color_manual(
+    name = "Diagnóstico",
+    values = c("0" = "#006992",
+               "1" = "#00BC7F"),
+    labels = c("0" = "Sano",
+               "1" = "Enfermo")
+  ) +
+  labs(x = "Edad",
+       y = "Depresión del segmento ST") +
+  theme_minimal()
+
+# Comparación entre presión arterial y colesterol
+ggplot(europa, aes(x = trestbps, y = chol, color = num)) +
+  geom_point() +
+  scale_color_manual(
+    name = "Diagnóstico",
+    values = c("0" = "#006992",
+               "1" = "#00BC7F"),
+    labels = c("0" = "Sano",
+               "1" = "Enfermo")
+  ) +
+  labs(x = "Presión arterial (Milímetros de mercurio)",
+       y = "Colesterol (Miligramos por 100 mililitros)") +
+  theme_minimal()
+
+# Comparación entre presión arterial y máxima frecuencia cardíaca
+ggplot(europa, aes(x = trestbps, y = thalach, color = num)) +
+  geom_point() +
+  scale_color_manual(
+    name = "Diagnóstico",
+    values = c("0" = "#006992",
+               "1" = "#00BC7F"),
+    labels = c("0" = "Sano",
+               "1" = "Enfermo")
+  ) +
+  labs(x = "Presión arterial (Milímetros de mercurio)",
+       y = "Máxima frecuencia cardíaca") +
+  theme_minimal()
+
+# Comparación entre presión arterial y máxima frecuencia cardíaca
+ggplot(europa, aes(x = trestbps, y = oldpeak, color = num)) +
+  geom_point() +
+  scale_color_manual(
+    name = "Diagnóstico",
+    values = c("0" = "#006992",
+               "1" = "#00BC7F"),
+    labels = c("0" = "Sano",
+               "1" = "Enfermo")
+  ) +
+  labs(x = "Presión arterial (Milímetros de mercurio)",
+       y = "Depresión del segmento ST") +
+  theme_minimal()
+
+# Comparación entre colesterol y máxima frecuencia cardíaca
+ggplot(europa, aes(x = chol, y = thalach, color = num)) +
+  geom_point() +
+  scale_color_manual(
+    name = "Diagnóstico",
+    values = c("0" = "#006992",
+               "1" = "#00BC7F"),
+    labels = c("0" = "Sano",
+               "1" = "Enfermo")
+  ) +
+  labs(x = "Colesterol (Miligramos por 100 mililitros)",
+       y = "Máxima frecuencia cardíaca") +
+  theme_minimal()
+
+# Comparación entre colesterol y 
+ggplot(europa, aes(x = chol, y = oldpeak, color = num)) +
+  geom_point() +
+  scale_color_manual(
+    name = "Diagnóstico",
+    values = c("0" = "#006992",
+               "1" = "#00BC7F"),
+    labels = c("0" = "Sano",
+               "1" = "Enfermo")
+  ) +
+  labs(x = "Colesterol (Miligramos por 100 mililitros)",
+       y = "Depresión del segmento ST") +
+  theme_minimal()
+```
+
 
 ### Variables categóricas
 
