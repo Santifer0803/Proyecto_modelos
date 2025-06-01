@@ -773,7 +773,7 @@ modelo <- train(
   num ~ ., 
   data = eeuu,
   method = "rf",
-  na.action = na.omit  # Opcional: omite filas con NA
+  na.action = na.omit  
 )
 ```
 
@@ -810,7 +810,7 @@ chisq.test(TD1)
 # H1 : Hay Dependencia (Sí hay una relación entre las variables).
 # Si p-value es menor que 0.05 entonces se debe rechazar.
 # En este caso el p-value es muy pequeño, por ende, se debe rechazar H0 e indicar que existe una relación entre la variable categórica sexo y la variable predictora.
-mosaicplot(TD1, color = TRUE, main = 'Gráfico de Mosaico')
+mosaicplot(TD1, color = c("#66c2a5", "#fc8d62"), main = 'Gráfico de Mosaico')
 ```
 ```{r}
 mosaicplot(TD1,
@@ -857,7 +857,7 @@ chisq.test(TD2)
 # H1 : Hay Dependencia (Sí hay una relación entre las variables).
 # Si p-value es menor que 0.05 entonces se debe rechazar.
 # En este caso el p-value es muy pequeño, por ende, se debe rechazar H0 e indicar que existe una relación entre la variable categórica sexo y la variable predictora.
-mosaicplot(TD2, color = TRUE, main = 'Gráfico de Mosaico')
+mosaicplot(TD2, color = c("#66c2a5", "#fc8d62"), main = 'Gráfico de Mosaico')
 ```
 Al igual que en la tabla de Estados Unidos, se observa que existe suficiente evidencia estadística para rechazar la hipótesis nula, debido al valor del p-value. 
 
@@ -902,7 +902,7 @@ chisq.test(TD3)
 # H1 : Hay Dependencia (Sí hay una relación entre las variables).
 # Si p-value es menor que 0.05 entonces se debe rechazar.
 # En este caso el p-value es muy pequeño, por ende, se debe rechazar H0 e indicar que existe una relación entre la variable categórica sexo y la variable predictora.
-mosaicplot(TD3, color = TRUE, main = 'Gráfico de Mosaico')
+mosaicplot(TD3, color = c("#66c2a5", "#fc8d62", "#8da0cb", "gray80"), main = 'Gráfico de Mosaico', las = 1)
 ```
 De la prueba anterior, se dice que hay evidencia estadística para rechazar la hipótesis nula de independencia, por ende, existe una relación entre las variables de angina de pecho y la variable respuesta de presentar la enfermedad. Según el gráfico de mosaico se interpreta que las personas que fueron asintomáticas presentaron una mayor proporción a presentar la enfermedad. 
 
@@ -966,7 +966,7 @@ dimnames(TD6) <- list(
 
 print(TD6)
 chisq.test(TD6)
-mosaicplot(TD6, color = TRUE, main = 'Gráfico de Mosaico', las = 1)
+mosaicplot(TD6, color = c("#66c2a5", "#fc8d62", "#8da0cb"), main = 'Gráfico de Mosaico', las = 1)
 ```
 En el caso de europa, se tiene que el p-value fue superior al 5% por lo que no se puede rechazar la hipótesis nula, esto sugiere que no hay relación entre las variables, dada la evidencia estadística. 
 
@@ -984,7 +984,7 @@ dimnames(TD7) <- list(
 
 print(TD7)
 chisq.test(TD7)
-mosaicplot(TD7, color = TRUE, main = 'Gráfico de Mosaico', las = 1)
+mosaicplot(TD7, color = c("#66c2a5", "#fc8d62"), main = 'Gráfico de Mosaico', las = 1)
 ```
 Para la variable ```exang``` se presenta una relación con la variable respuesta. Hay evidencia estadística suficiente para rechazar la hipótesis nula. 
 
@@ -1000,7 +1000,7 @@ dimnames(TD8) <- list(
 
 print(TD8)
 chisq.test(TD8)
-mosaicplot(TD8, color = TRUE, main = 'Gráfico de Mosaico', las = 1)
+mosaicplot(TD8, color = c("#66c2a5", "#fc8d62"), main = 'Gráfico de Mosaico', las = 1)
 ```
 
 Se procede con el cálculo del Odd Ratio perteneciente a Europa, para evaluar la magnitud. 
@@ -1095,3 +1095,5 @@ chisq.test(TD12)
 mosaicplot(TD12, color = c("#66c2a5", "#fc8d62", "#8da0cb"), main = 'Gráfico de Mosaico', las = 1)
 ```
 En el caso de Europa, se tiene el problema de que hay un bajo conteo en las celdas, por ende, aumenta la varianza. En este caso, la prueba de hipótesis indica que no se puede rechazar la hipótesis nula, lo que sugiere que no hay evidencia estadística que relacione a las variables de talasemia con presentar la enfermedad. Esta prueba debe tomarse con cautela, puesto que al observar el gráfico de mosaico, se puede notar que existe leve variación, pero el bajo conteo puede estar afectando al resultado. 
+
+
