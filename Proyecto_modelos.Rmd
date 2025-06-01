@@ -766,4 +766,332 @@ corrplot(
 # Se eliminan variables innecesarias
 rm(eeuu.aux, europa.aux, cor.matrix)
 ```
+# Gráfico de Mosaicos
 
+```{r}
+modelo <- train(
+  num ~ ., 
+  data = eeuu,
+  method = "rf",
+  na.action = na.omit  # Opcional: omite filas con NA
+)
+```
+
+
+```{r}
+# Extraer importancia
+importancia <- varImp(modelo)$importance %>%
+  tibble::rownames_to_column("Variable") %>%
+  arrange(desc(Overall))
+
+# Gráfico de barras
+ggplot(importancia, aes(x = reorder(Variable, Overall), y = Overall)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +  # Barras horizontales
+  labs(x = "Variable", y = "Importancia", title = "Importancia de Variables") +
+  theme_minimal()
+
+```
+
+Se hará una tabla de contingencias, con el fin de encontrar el grado de asociación que poseen las variables, primero se utiliza la base de estados unidos. 
+
+```{r}
+TD1 <- table(eeuu$num, eeuu$sex)
+
+# Se asignan nombres descriptivos
+dimnames(TD1) <- list(
+  "Enfermedad" = c("Sano", "Enfermo"),  # Filas (num)
+  "Sexo" = c("Mujer", "Hombre")         # Columnas (sex)
+)
+
+print(TD1)
+chisq.test(TD1)
+# H0 : Hay Independencia (No hay relación entre las variables).
+# H1 : Hay Dependencia (Sí hay una relación entre las variables).
+# Si p-value es menor que 0.05 entonces se debe rechazar.
+# En este caso el p-value es muy pequeño, por ende, se debe rechazar H0 e indicar que existe una relación entre la variable categórica sexo y la variable predictora.
+mosaicplot(TD1, color = TRUE, main = 'Gráfico de Mosaico')
+```
+```{r}
+mosaicplot(TD1,
+           color = c("#66C2A5", "#FC8D62"),  # Colores personalizados
+           main = "Prevalencia de Enfermedad Cardíaca por Sexo",
+           xlab = "Estado de Salud",
+           ylab = "Sexo",
+           cex.axis = 1.2
+)
+```
+
+```{r}
+OR1 <- (260 * 75) / (140 * 28)  # (Enf_Hombres * Sanas_Mujeres) / (Sanos_Hombres * Enf_Mujeres)
+OR1
+```
+Al calcular el Odd's ratio se encuentra que los hombres tienen aproximadamente 5 veces más probabilidad de parecer la enfermedad que las mujeres. 
+
+
+El siguiente gráfico tiene la finalidad de presentar los datos de manera proporcional, presentando siempre la misma información.
+
+```{r}
+ggplot(as.data.frame(TD1), aes(x = Sexo, y = Freq, fill = Enfermedad)) +
+  geom_col(position = "fill") +  # Proporciones en lugar de conteos
+  scale_fill_manual(values = c("Sano" = "#66C2A5", "Enfermo" = "#FC8D62")) +
+  labs(title = "Proporción de Enfermedad Cardíaca por Sexo",
+       y = "Proporción",
+       x = "") +
+  theme_minimal()
+```
+Repetimos el mismo procedimiento para las variables de europa. 
+
+```{r}
+TD2 <- table(europa$num, europa$sex)
+
+# Se asignan nombres descriptivos
+dimnames(TD2) <- list(
+  "Enfermedad" = c("Sano", "Enfermo"),  # Filas (num)
+  "Sexo" = c("Mujer", "Hombre")         # Columnas (sex)
+)
+
+print(TD2)
+chisq.test(TD2)
+# H0 : Hay Independencia (No hay relación entre las variables).
+# H1 : Hay Dependencia (Sí hay una relación entre las variables).
+# Si p-value es menor que 0.05 entonces se debe rechazar.
+# En este caso el p-value es muy pequeño, por ende, se debe rechazar H0 e indicar que existe una relación entre la variable categórica sexo y la variable predictora.
+mosaicplot(TD2, color = TRUE, main = 'Gráfico de Mosaico')
+```
+Al igual que en la tabla de Estados Unidos, se observa que existe suficiente evidencia estadística para rechazar la hipótesis nula, debido al valor del p-value. 
+
+Se procede a calcular el Odd Ratio, con el fin de verificar la magnitud de esta asociación. 
+
+```{r}
+OR2 <- (199 * 69) / (127 * 22)  # (Enf_Hombres * Sanas_Mujeres) / (Sanos_Hombres * Enf_Mujeres)
+OR2
+```
+Se observa una magnitud proporcionalmente igual en ambos continentes, la probabilidad de padecer la enfermedad aumenta 5 veces más cuando se es hombre. 
+
+Se gráfica utilizando proporción.
+```{r}
+ggplot(as.data.frame(TD2), aes(x = Sexo, y = Freq, fill = Enfermedad)) +
+  geom_col(position = "fill") +  # Proporciones en lugar de conteos
+  scale_fill_manual(values = c("Sano" = "#66C2A5", "Enfermo" = "#FC8D62")) +
+  labs(title = "Proporción de Enfermedad Cardíaca por Sexo",
+       y = "Proporción",
+       x = "") +
+  theme_minimal()
+```
+Seguidamente, la variable analizar será ```cp```, la cual hace referencia a la Angina de pecho, para ello, se convierte la variable a factor, es decir a una variable categórica, con el fin de que se realice un procedimiento análogo al anterior. 
+
+```{r}
+eeuu$cp_categorico <- as.factor(eeuu$cp)
+```
+
+Se procede con la creación de una tabla auxiliar.
+
+```{r}
+TD3 <- table(eeuu$num, eeuu$cp_categorico)
+
+# Se asignan nombres descriptivos
+dimnames(TD3) <- list(
+  "Enfermedad" = c("Sano", "Enfermo"), 
+  "Tipo de Angina (Dolor de Pecho)" = c("Angina Típica", "Angina Atípica", "Dolor sin Angina", "Asintomático")         
+)
+
+print(TD3)
+chisq.test(TD3)
+# H0 : Hay Independencia (No hay relación entre las variables).
+# H1 : Hay Dependencia (Sí hay una relación entre las variables).
+# Si p-value es menor que 0.05 entonces se debe rechazar.
+# En este caso el p-value es muy pequeño, por ende, se debe rechazar H0 e indicar que existe una relación entre la variable categórica sexo y la variable predictora.
+mosaicplot(TD3, color = TRUE, main = 'Gráfico de Mosaico')
+```
+De la prueba anterior, se dice que hay evidencia estadística para rechazar la hipótesis nula de independencia, por ende, existe una relación entre las variables de angina de pecho y la variable respuesta de presentar la enfermedad. Según el gráfico de mosaico se interpreta que las personas que fueron asintomáticas presentaron una mayor proporción a presentar la enfermedad. 
+
+Se procede de manera similar, pero ahora con la base de europa. 
+
+```{r}
+europa$cp_categorico <- as.factor(europa$cp)
+
+TD4 <- table(europa$num, europa$cp_categorico)
+
+# Se asignan nombres descriptivos
+dimnames(TD4) <- list(
+  "Enfermedad" = c("Sano", "Enfermo"), 
+  "Tipo de Angina (Dolor de Pecho)" = c("Angina Típica", "Angina Atípica", "Dolor sin Angina", "Asintomático")         
+)
+
+print(TD4)
+chisq.test(TD4)
+# H0 : Hay Independencia (No hay relación entre las variables).
+# H1 : Hay Dependencia (Sí hay una relación entre las variables).
+# Si p-value es menor que 0.05 entonces se debe rechazar.
+# En este caso el p-value es muy pequeño, por ende, se debe rechazar H0 e indicar que existe una relación entre la variable categórica sexo y la variable predictora.
+mosaicplot(TD4, color = c("#66c2a5", "#fc8d62", "#8da0cb", "gray80"), main = 'Gráfico de Mosaico', las = 1)
+```
+Las conclusiones para este caso son las mismas, las personas asintomáticas presentan una mayor proporción de padecer la enfermedad. Además, el p-value contribuye a rechazar la hipótesis nula, por lo que hay evidencia estadística para indicar que las variables están relacionadas. 
+
+Luego, la variable analizada es el electrocardiograma en reposo. 
+
+```{r}
+eeuu$restecg_categorico <- as.factor(eeuu$restecg)
+
+TD5 <- table(eeuu$num, eeuu$restecg_categorico)
+
+# Se asignan nombres descriptivos
+dimnames(TD5) <- list(
+  "Enfermedad" = c("Sano", "Enfermo"), 
+  "ECG en reposo" = c("Normal", "ST-T", "Hipertrofia")         
+)
+
+print(TD5)
+chisq.test(TD5)
+# H0 : Hay Independencia (No hay relación entre las variables).
+# H1 : Hay Dependencia (Sí hay una relación entre las variables).
+# Si p-value es menor que 0.05 entonces se debe rechazar.
+# En este caso el p-value es muy pequeño, por ende, se debe rechazar H0 e indicar que existe una relación entre la variable categórica sexo y la variable predictora.
+mosaicplot(TD5, color = c("#66c2a5", "#fc8d62", "#8da0cb"), main = 'Gráfico de Mosaico', las = 1)
+```
+El p-value encontrado en la prueba de hipótesis sugiere que hay evidencia estadística para rechazar la hipótesis nula, es decir, que existe cierto grado de asociación, sin embargo, es importante notar que el p-value es relativamente más grande que los calculados anteriormente, lo que sugiere una evidencia estadísticamente débil. 
+
+Se procede de manera similar con los gráficos, pero de la base de europa.
+
+```{r}
+europa$restecg_categorico <- as.factor(europa$restecg)
+
+TD6 <- table(europa$num, europa$restecg_categorico)
+
+dimnames(TD6) <- list(
+  "Enfermedad" = c("Sano", "Enfermo"), 
+  "ECG en reposo" = c("Normal", "ST-T", "Hipertrofia")         
+)
+
+print(TD6)
+chisq.test(TD6)
+mosaicplot(TD6, color = TRUE, main = 'Gráfico de Mosaico', las = 1)
+```
+En el caso de europa, se tiene que el p-value fue superior al 5% por lo que no se puede rechazar la hipótesis nula, esto sugiere que no hay relación entre las variables, dada la evidencia estadística. 
+
+Se cambia la variable objetivo, la cual es la angina producida por ejercicio, con el fin de determinar el grado de influencia entre variables.
+
+```{r}
+eeuu$exang_categorico <- as.factor(eeuu$exang)
+
+TD7 <- table(eeuu$num, eeuu$exang_categorico)
+
+dimnames(TD7) <- list(
+  "Enfermedad" = c("Sano", "Enfermo"), 
+  "ECG en reposo" = c("No", "Si")         
+)
+
+print(TD7)
+chisq.test(TD7)
+mosaicplot(TD7, color = TRUE, main = 'Gráfico de Mosaico', las = 1)
+```
+Para la variable ```exang``` se presenta una relación con la variable respuesta. Hay evidencia estadística suficiente para rechazar la hipótesis nula. 
+
+```{r}
+europa$exang_categorico <- as.factor(europa$exang)
+
+TD8 <- table(europa$num, europa$exang_categorico)
+
+dimnames(TD8) <- list(
+  "Enfermedad" = c("Sano", "Enfermo"), 
+  "Angina por ejercicio" = c("No", "Si")         
+)
+
+print(TD8)
+chisq.test(TD8)
+mosaicplot(TD8, color = TRUE, main = 'Gráfico de Mosaico', las = 1)
+```
+
+Se procede con el cálculo del Odd Ratio perteneciente a Europa, para evaluar la magnitud. 
+
+```{r}
+# No angina y sano: 175
+# No angina y enfermo: 97
+# Sí angina y sano: 20
+# Sí angina y enfermo: 123
+OR_angina_europa = (175 * 123) / (97 * 20)
+OR_angina_europa
+```
+Para el caso de Europa el odd ratio sugiere que las personas que presentaron angina inducida por ejercicio tienen 11 veces más probabilidad de presentar la enfermedad de las personas que no presentaron dicho dolor. 
+
+Para el caso de Estados Unidos, se tiene que: 
+```{r}
+# No angina y sano: 161
+# No angina y enfermo: 95
+# Si angina y sano: 35
+# si angina y enfermo: 159
+OR_angina_eeuu = (161 * 159) / (95 * 35)
+OR_angina_eeuu
+```
+Para el caso de Estados Unidos, las personas que presentaron angina inducida por ejercicio, tienen 7 veces más probabilidades de presentar la enfermedad que las personas que no presentaron dicho padecimiento.
+
+```{r}
+eeuu$slope_categorico <- as.factor(eeuu$slope)
+
+TD9 <- table(eeuu$num, eeuu$slope_categorico)
+
+dimnames(TD9) <- list(
+  "Enfermedad" = c("Sano", "Enfermo"), 
+  "Inclinación" = c("Creciente", "Constante", "Decreciente")         
+)
+
+print(TD9)
+chisq.test(TD9)
+mosaicplot(TD9, color = c("#66c2a5", "#fc8d62", "#8da0cb"), main = 'Gráfico de Mosaico', las = 1)
+```
+
+Para el caso de Estados Unidos la prueba muestra un p-value menor al 5%, por lo que hay evidencia estadística para rechazar la hipótesis nula, lo que sugiere que hay evidencia de que las variables están relacionadas. 
+
+
+```{r}
+europa$slope_categorico <- as.factor(europa$slope)
+
+TD10 <- table(europa$num, europa$slope_categorico)
+
+dimnames(TD10) <- list(
+  "Enfermedad" = c("Sano", "Enfermo"), 
+  "Inclinación" = c("Creciente", "Constante", "Decreciente")         
+)
+
+print(TD10)
+chisq.test(TD10)
+mosaicplot(TD10, color = c("#66c2a5", "#fc8d62", "#8da0cb"), main = 'Gráfico de Mosaico', las = 1)
+```
+Para el caso de Europa, se tiene el problema de poca muestra en el conteo de lagunas celdas de la tabla de la tabla de contingencia, lo que puede provocar un error en los cálculos, al observar el gráfico de mosaico se observa una proporción más o menos igual entre los segmentos constante y decreciente. En el caso de ser creciente, hay una diferencia relativamente significativa, lo que puede sugerir que para este caso hay una relación. Al aplicar la prueba de hipótesis, se tiene que el p-value es inferior al 5%, lo que indica que se debe rechazar la hipótesis nula, sin embargo esta evidencia es estadísticamente débil.
+
+Por último se analiza la variable de ```thal```, la cual hace referencia a la Talasemia.
+
+```{r}
+eeuu$thal_categorico <- as.factor(eeuu$thal)
+
+TD11 <- table(eeuu$num, eeuu$thal_categorico)
+
+dimnames(TD11) <- list(
+  "Enfermedad" = c("Sano", "Enfermo"), 
+  "Talasemia" = c("Normal", "Defecto Arreglado", "Reversible")         
+)
+
+print(TD11)
+chisq.test(TD11)
+mosaicplot(TD11, color = c("#66c2a5", "#fc8d62", "#8da0cb"), main = 'Gráfico de Mosaico', las = 1)
+```
+
+Para el caso de Estados Unidos, se puede observar del gráfico de mosaico una gran diferencia, al aplicar la prueba de hipótesis, se tiene que la relación entre la variable talasemia y la variable respuesta es significativa, dada la evidencia estadística, es decir, se rechazó la hipótesis nula. 
+
+
+```{r}
+europa$thal_categorico <- as.factor(europa$thal)
+
+TD12 <- table(europa$num, europa$thal_categorico)
+
+dimnames(TD12) <- list(
+  "Enfermedad" = c("Sano", "Enfermo"), 
+  "Talasemia" = c("Normal", "Defecto Arreglado", "Reversible")         
+)
+
+print(TD12)
+chisq.test(TD12)
+mosaicplot(TD12, color = c("#66c2a5", "#fc8d62", "#8da0cb"), main = 'Gráfico de Mosaico', las = 1)
+```
+En el caso de Europa, se tiene el problema de que hay un bajo conteo en las celdas, por ende, aumenta la varianza. En este caso, la prueba de hipótesis indica que no se puede rechazar la hipótesis nula, lo que sugiere que no hay evidencia estadística que relacione a las variables de talasemia con presentar la enfermedad. Esta prueba debe tomarse con cautela, puesto que al observar el gráfico de mosaico, se puede notar que existe leve variación, pero el bajo conteo puede estar afectando al resultado. 
