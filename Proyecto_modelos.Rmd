@@ -768,31 +768,6 @@ rm(eeuu.aux, europa.aux, cor.matrix)
 ```
 # Gráfico de Mosaicos
 
-```{r}
-modelo <- train(
-  num ~ ., 
-  data = eeuu,
-  method = "rf",
-  na.action = na.omit  
-)
-```
-
-
-```{r}
-# Extraer importancia
-importancia <- varImp(modelo)$importance %>%
-  tibble::rownames_to_column("Variable") %>%
-  arrange(desc(Overall))
-
-# Gráfico de barras
-ggplot(importancia, aes(x = reorder(Variable, Overall), y = Overall)) +
-  geom_col(fill = "steelblue") +
-  coord_flip() +  # Barras horizontales
-  labs(x = "Variable", y = "Importancia", title = "Importancia de Variables") +
-  theme_minimal()
-
-```
-
 Se hará una tabla de contingencias, con el fin de encontrar el grado de asociación que poseen las variables, primero se utiliza la base de estados unidos. 
 
 ```{r}
@@ -812,15 +787,6 @@ chisq.test(TD1)
 # En este caso el p-value es muy pequeño, por ende, se debe rechazar H0 e indicar que existe una relación entre la variable categórica sexo y la variable predictora.
 mosaicplot(TD1, color = c("#66c2a5", "#fc8d62"), main = 'Gráfico de Mosaico')
 ```
-```{r}
-mosaicplot(TD1,
-           color = c("#66C2A5", "#FC8D62"),  # Colores personalizados
-           main = "Prevalencia de Enfermedad Cardíaca por Sexo",
-           xlab = "Estado de Salud",
-           ylab = "Sexo",
-           cex.axis = 1.2
-)
-```
 
 ```{r}
 OR1 <- (260 * 75) / (140 * 28)  # (Enf_Hombres * Sanas_Mujeres) / (Sanos_Hombres * Enf_Mujeres)
@@ -828,18 +794,6 @@ OR1
 ```
 Al calcular el Odd's ratio se encuentra que los hombres tienen aproximadamente 5 veces más probabilidad de parecer la enfermedad que las mujeres. 
 
-
-El siguiente gráfico tiene la finalidad de presentar los datos de manera proporcional, presentando siempre la misma información.
-
-```{r}
-ggplot(as.data.frame(TD1), aes(x = Sexo, y = Freq, fill = Enfermedad)) +
-  geom_col(position = "fill") +  # Proporciones en lugar de conteos
-  scale_fill_manual(values = c("Sano" = "#66C2A5", "Enfermo" = "#FC8D62")) +
-  labs(title = "Proporción de Enfermedad Cardíaca por Sexo",
-       y = "Proporción",
-       x = "") +
-  theme_minimal()
-```
 Repetimos el mismo procedimiento para las variables de europa. 
 
 ```{r}
@@ -869,16 +823,6 @@ OR2
 ```
 Se observa una magnitud proporcionalmente igual en ambos continentes, la probabilidad de padecer la enfermedad aumenta 5 veces más cuando se es hombre. 
 
-Se gráfica utilizando proporción.
-```{r}
-ggplot(as.data.frame(TD2), aes(x = Sexo, y = Freq, fill = Enfermedad)) +
-  geom_col(position = "fill") +  # Proporciones en lugar de conteos
-  scale_fill_manual(values = c("Sano" = "#66C2A5", "Enfermo" = "#FC8D62")) +
-  labs(title = "Proporción de Enfermedad Cardíaca por Sexo",
-       y = "Proporción",
-       x = "") +
-  theme_minimal()
-```
 Seguidamente, la variable analizar será ```cp```, la cual hace referencia a la Angina de pecho, para ello, se convierte la variable a factor, es decir a una variable categórica, con el fin de que se realice un procedimiento análogo al anterior. 
 
 ```{r}
