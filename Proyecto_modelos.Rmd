@@ -174,7 +174,7 @@ ggplot(nulos, aes(x = variable, y = (Nulos * 100), fill = Origen)) +
 rm(nulos)
 ```
 
-# Bases agregadas
+## Bases agregadas
 
 Una vez vistos los nulos, se procede a agregar un identificador para ver el origen de las observaciones. Luego, se juntan las bases de Estados Unidos (*Cleveland* y *Long beach*) y las de Europa (*Suiza* y *Hungría*) para tener datos más compactos.
 
@@ -198,9 +198,9 @@ eeuu$num <- factor(eeuu$num, levels = c(0, 1))
 europa$num <- factor(europa$num, levels = c(0, 1))
 ```
 
-## Análisis exploratorio de datos
+# Análisis exploratorio de datos
 
-### Columnas numéricas de EEUU
+## Columnas numéricas de EEUU
 
 Inicialmente, se pretende observar las variables de forma individual.
 
@@ -412,7 +412,7 @@ ggplot(eeuu, aes(x = chol, y = oldpeak, color = num)) +
   theme_minimal()
 ```
 
-### Columnas numéricas de Europa
+## Columnas numéricas de Europa
 
 Se procede a recrear los escenarios para el caso de los países europeos. 
 ```{r var_individual_Euro, warning = FALSE}
@@ -621,7 +621,7 @@ ggplot(europa, aes(x = chol, y = oldpeak, color = num)) +
   theme_minimal()
 ```
 
-### Varianzas y correlaciones
+## Varianzas y correlaciones
 
 Primero se crean diferentes gráficos para visualizar el comportamiento de las varianzas de las variables presentes en las bases de datos.
 
@@ -759,7 +759,7 @@ corrplot(
 rm(eeuu.aux, europa.aux, cor.matrix)
 ```
 
-### Variables categóricas - Gráficos de Mosaicos
+## Variables categóricas - Gráficos de Mosaicos
 
 Se hará una tabla de contingencias, con el fin de encontrar el grado de asociación que poseen las variables, primero se utiliza la base de estados unidos. 
 
@@ -1102,4 +1102,4 @@ mosaicplot(
 
 En el caso de Europa, se tiene el problema de que hay un bajo conteo en las celdas, por ende, aumenta la varianza. En este caso, la prueba de hipótesis indica que no se puede rechazar la hipótesis nula, lo que sugiere que no hay evidencia estadística que relacione a las variables de talasemia con presentar la enfermedad. Esta prueba debe tomarse con cautela, puesto que al observar el gráfico de mosaico, se puede notar que existe leve variación, pero el bajo conteo puede estar afectando al resultado. 
 
-
+# 
