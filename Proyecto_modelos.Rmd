@@ -1138,11 +1138,11 @@ eeuu$edad_disc <-
       include.lowest = TRUE)
 hungria$edad_disc <-
   cut(hungria$age,
-      breaks = quantile(eeuu$age, probs = seq(0, 1, 0.25)),
+      breaks = quantile(hungria$age, probs = seq(0, 1, 0.25)),
       include.lowest = TRUE)
 suiza$edad_disc <-
   cut(suiza$age,
-      breaks = quantile(eeuu$age, probs = seq(0, 1, 0.25)),
+      breaks = quantile(suiza$age, probs = seq(0, 1, 0.25)),
       include.lowest = TRUE)
 
 # Se divide la base de EEUU en train y test (tiene bastantes observaciones, entonces se opta por 70/30)
