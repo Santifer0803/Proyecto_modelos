@@ -1148,7 +1148,7 @@ suiza$edad_disc <-
       include.lowest = TRUE)
 europa$edad_disc <-
   cut(europa$age,
-      breaks = quantile(suiza$age, probs = seq(0, 1, 0.25)),
+      breaks = quantile(europa$age, probs = seq(0, 1, 0.25)),
       include.lowest = TRUE)
 
 # Se divide la base de EEUU en train y test (tiene bastantes observaciones, entonces se opta por 70/30)
@@ -1203,5 +1203,9 @@ printCoefmat(coef(summary(modelo.eeuu)))
 printCoefmat(coef(summary(modelo.hungria)))
 printCoefmat(coef(summary(modelo.suiza)))
 printCoefmat(coef(summary(modelo.europa)))
+
+# Resultados con razon de verosimilitud
+anova(modelo.eeuu, test = "Chisq")
+anova(modelo.europa, test = "Chisq")
 ```
 
