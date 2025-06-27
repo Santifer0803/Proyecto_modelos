@@ -1206,6 +1206,8 @@ printCoefmat(coef(summary(modelo.europa)))
 
 # Resultados con razon de verosimilitud
 anova(modelo.eeuu, test = "Chisq")
+anova(modelo.hungria, test = "Chisq")
+anova(modelo.suiza, test = "Chisq")
 anova(modelo.europa, test = "Chisq")
 ```
 
