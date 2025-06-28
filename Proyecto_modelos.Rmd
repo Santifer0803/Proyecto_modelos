@@ -1110,11 +1110,11 @@ En el caso de Europa, se tiene el problema de que hay un bajo conteo en las celd
 
 # Ajuste y escogencia del modelo
 
-Finalmente, se usarán las bases de EEUU juntas, para reducir el efecto de los nulos en la de Long Beach. Los datos de Hungría y Suiza se utililzan por separado, dejando un total de 3 fuentes de información.
+Finalmente, se usarán las bases de EEUU juntas, para reducir el efecto de los nulos en la de Long Beach. Los datos de Hungría y Suiza se utililzan juntos, debido a que en Suiza hay muy pocos datos, resultando en modelos muy pobres (limitación).
 
 Basado en el análisis descriptivo, se observó que hay variables que discriminan entre las personas enfermas y las sanas. Entonces, se escogió el modelo de regresión logística.
 
-Debido a que se demostró en el AED que tanto la edad como el sexo discriminan considerablemente con respecto a la edad, junto al hecho de que estas variables no presentan nulos. Todos los modelos considerarán estas variables de forma inicial.
+Debido a que se demostró en el AED que la edad, el sexo y el tipo de dolor en el pecho (cp) discriminan considerablemente con respecto al diagnóstico, junto al hecho de que estas variables no presentan nulos. Todos los modelos considerarán estas variables de forma inicial.
 
 ```{r ajuste_modelo}
 # Semilla para reproducibilidad
@@ -1146,18 +1146,18 @@ eeuu.test <- anti_join(eeuu, eeuu.train, by = "id")
 europa.train <- europa %>% sample_frac(0.8)
 europa.test <- anti_join(europa, europa.train, by = "id")
 
-# Se obtienen los modelos
+# Se obtienen los modelos iniciales
 # Para dejar las observaciones sin nulos: complete.cases(df$x, df$y)
 modelo.eeuu <-
   glm(
-    num ~ edad_disc + sex,
+    num ~ edad_disc + sex + cp_categorico,
     family = binomial,
     data = eeuu.train,
     na.action = na.omit
   )
 modelo.europa <-
   glm(
-    num ~ edad_disc + sex,
+    num ~ edad_disc + sex + cp_categorico,
     family = binomial,
     data = europa.train,
     na.action = na.omit
@@ -1166,9 +1166,12 @@ modelo.europa <-
 # Se observan los resultados
 printCoefmat(coef(summary(modelo.eeuu)))
 printCoefmat(coef(summary(modelo.europa)))
+```
 
-# Resultados con razon de verosimilitud
-anova(modelo.eeuu, test = "Chisq")
-anova(modelo.europa, test = "Chisq")
+El tipo de dolor en el pecho resultó poco significativo en 2 de sus 4 cactegorías para ambos datos. Entonces, se actualiza el modelo sin esta variable.
+
+```{r eliminacion_cp}
+modelo.eeuu <- update(modelo.eeuu, . ~ . - cp_categorico)
+modelo.europa <- update(modelo.europa, . ~ . - cp_categorico)
 ```
 
