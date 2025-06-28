@@ -11,7 +11,8 @@ Inicialmente, se obtienen las librarías necesarias para el desarrollo del proye
 pacman::p_load(tidyverse,
                dplyr,
                knitr,
-               corrplot)
+               corrplot,
+               pROC)
 ```
 
 # Bases desagregadas
@@ -1146,20 +1147,41 @@ eeuu.test <- anti_join(eeuu, eeuu.train, by = "id")
 europa.train <- europa %>% sample_frac(0.8)
 europa.test <- anti_join(europa, europa.train, by = "id")
 
+# Se quitan las observaciones con nulos de las variables observadas en la figura
+eeuu.train.limpio <-
+  eeuu.train[complete.cases(
+    eeuu.train$trestbps,
+    eeuu.train$chol,
+    eeuu.train$fbs,
+    eeuu.train$restecg_categorico,
+    eeuu.train$thalach,
+    eeuu.train$exang_categorico,
+    eeuu.train$oldpeak
+  ), ]
+europa.train.limpio <-
+  europa.train[complete.cases(
+    europa.train$trestbps,
+    europa.train$chol,
+    europa.train$fbs,
+    europa.train$restecg_categorico,
+    europa.train$thalach,
+    europa.train$exang_categorico,
+    europa.train$oldpeak
+  ), ]
+
 # Se obtienen los modelos iniciales
-# Para dejar las observaciones sin nulos: complete.cases(df$x, df$y)
 modelo.inicial.eeuu <-
   glm(
     num ~ edad_disc + sex + cp_categorico,
     family = binomial,
-    data = eeuu.train,
+    data = eeuu.train.limpio,
     na.action = na.omit
   )
 modelo.inicial.europa <-
   glm(
     num ~ edad_disc + sex + cp_categorico,
     family = binomial,
-    data = europa.train,
+    data = europa.train.limpio,
     na.action = na.omit
   )
 
@@ -1171,8 +1193,10 @@ printCoefmat(coef(summary(modelo.inicial.europa)))
 El tipo de dolor en el pecho resultó poco significativo en 2 de sus 4 cactegorías para ambos datos. Entonces, se actualiza el modelo sin esta variable.
 
 ```{r eliminacion_cp}
-modelo.inicial.eeuu <- update(modelo.inicial.eeuu, . ~ . - cp_categorico)
-modelo.inicial.europa <- update(modelo.inicial.europa, . ~ . - cp_categorico)
+modelo.inicial.eeuu <-
+  update(modelo.inicial.eeuu, . ~ . - cp_categorico)
+modelo.inicial.europa <-
+  update(modelo.inicial.europa, . ~ . - cp_categorico)
 ```
 
 Además de esta última variable, se descartan las variables que presentan una cantidad de nulos superior al $50\%$ en la figura correspondiente. Esto ya que, a la hora de probar el modelo, esos nulos podrían estar presentes en los datos de *testing*, lo cual reduciría el análisis de resultados considerablemente.
@@ -1188,19 +1212,104 @@ Además, para el caso de la base de Europa, también se descarta la variable fbs
 Después de la justificación teórica, se procede a considerar el modelo con más variables posibles, descartando las mencionadas anteriormente.
 
 ```{r modelos_completos}
+# Se construye el modelo completo
 modelo.completo.eeuu <-
   glm(
     num ~ edad_disc + sex + trestbps + chol + fbs + restecg_categorico + thalach + exang_categorico + oldpeak,
     family = binomial,
-    data = europa.train,
+    data = eeuu.train.limpio,
     na.action = na.omit
   )
 modelo.completo.europa <-
   glm(
     num ~ edad_disc + sex + trestbps + chol + restecg_categorico + thalach + exang_categorico + oldpeak,
     family = binomial,
-    data = europa.train,
+    data = europa.train.limpio,
     na.action = na.omit
   )
+
+# Se construye el modelo sin siquiera intercepto
+modelo.nulo.eeuu <-
+  glm(num ~ 0,
+      family = binomial,
+      data = eeuu.train.limpio,
+      na.action = na.omit)
+modelo.nulo.europa <-
+  glm(num ~ 0,
+      family = binomial,
+      data = europa.train.limpio,
+      na.action = na.omit)
 ```
 
+Finalmente, para elegir el modelo final, se busca el modelo que [minimice el BIC](https://www-rdocumentation-org.translate.goog/packages/stats/versions/3.6.2/topics/step?_x_tr_sl=en&_x_tr_tl=es&_x_tr_hl=es&_x_tr_pto=tc&_x_tr_hist=true). Se elige esta métrica debido a que penaliza la complejidad del modelo, dejando así un resultado con menos variables que la evaluación con el AIC.
+
+```{r modelo_final}
+modelo.final.eeuu <- step(
+  modelo.inicial.eeuu,
+  scope = list(lower = modelo.nulo.eeuu, upper = modelo.completo.eeuu),
+  direction = "both",
+  k = log(nrow(eeuu.train.limpio))
+)
+modelo.final.europa <- step(
+  modelo.inicial.europa,
+  scope = list(lower = modelo.nulo.europa, upper = modelo.completo.europa),
+  direction = "both",
+  k = log(nrow(europa.train.limpio))
+)
+```
+
+Finalmente, se ve la fórmula de los modelos finales.
+
+```{r formula_final}
+formula(modelo.final.eeuu)
+formula(modelo.final.europa)
+```
+
+Note que se eliminó la edad en ambos casos, pues perdió la poca significancia que tenía. Luego, las variables que quedaron, aparte del sexo, fueron:
+
+ - exang_categorico: indica si hay angina después de hacer ejercicio.
+ - thalach: el mayor ritmo cardíaco registrado.
+ - oldpeak (para eeuu): depresión del segmento ST inducida por el ejercicio en relación con el reposo.
+
+Finalmente, para una mayor visualización del modelo se puede ver lo siguiente:
+
+```{r resumen_modelo}
+summary(modelo.final.eeuu)
+summary(modelo.final.europa)
+```
+
+aunque el intercepto no resulta significativo, este se mantiene, debido a que el BIC no mejoró sin este.
+
+# Resultados del modelo
+
+Se obtienen los resultados de los modelos correspondientes.
+
+```{r predicciones}
+# Datos sin nulos
+eeuu.test.limpio <-
+  eeuu.test[complete.cases(
+    eeuu.test$trestbps,
+    eeuu.test$chol,
+    eeuu.test$fbs,
+    eeuu.test$restecg_categorico,
+    eeuu.test$thalach,
+    eeuu.test$exang_categorico,
+    eeuu.test$oldpeak
+  ),]
+europa.test.limpio <-
+  europa.test[complete.cases(
+    europa.test$trestbps,
+    europa.test$chol,
+    europa.test$fbs,
+    europa.test$restecg_categorico,
+    europa.test$thalach,
+    europa.test$exang_categorico,
+    europa.test$oldpeak
+  ),]
+
+# Predicciones con probabilidad (probabilidad de tener la enfermedad)
+prediccion.eeuu <-
+  predict(modelo.final.eeuu, newdata = eeuu.test.limpio, type = "response")
+prediccion.europa <-
+  predict(modelo.final.europa, newdata = europa.test.limpio, type = "response")
+```
