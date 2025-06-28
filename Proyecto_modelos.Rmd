@@ -1122,29 +1122,16 @@ set.seed(0609)
 
 # Se agrega una columna de id a las bases de datos
 eeuu$id <- 1:nrow(eeuu)
-hungria$id <- 1:nrow(hungria)
-suiza$id <- 1:nrow(suiza)
 europa$id <- 1:nrow(europa)
 
 # Se pone de primera la variable de id
 eeuu <- eeuu %>% select(id, colnames(eeuu[, 1:ncol(eeuu)]))
-hungria <-
-  hungria %>% select(id, colnames(hungria[, 1:ncol(hungria)]))
-suiza <- suiza %>% select(id, colnames(suiza[, 1:ncol(suiza)]))
 europa <- europa %>% select(id, colnames(europa[, 1:ncol(europa)]))
 
 # Edad discretizada por cuantiles
 eeuu$edad_disc <-
   cut(eeuu$age,
       breaks = quantile(eeuu$age, probs = seq(0, 1, 0.25)),
-      include.lowest = TRUE)
-hungria$edad_disc <-
-  cut(hungria$age,
-      breaks = quantile(hungria$age, probs = seq(0, 1, 0.25)),
-      include.lowest = TRUE)
-suiza$edad_disc <-
-  cut(suiza$age,
-      breaks = quantile(suiza$age, probs = seq(0, 1, 0.25)),
       include.lowest = TRUE)
 europa$edad_disc <-
   cut(europa$age,
@@ -1154,14 +1141,6 @@ europa$edad_disc <-
 # Se divide la base de EEUU en train y test (tiene bastantes observaciones, entonces se opta por 70/30)
 eeuu.train <- eeuu %>% sample_frac(0.7)
 eeuu.test <- anti_join(eeuu, eeuu.train, by = "id")
-
-# Se divide la base de Hungría en train y test (tiene bastantes observaciones, entonces se opta por 70/30)
-hungria.train <- hungria %>% sample_frac(0.7)
-hungria.test <- anti_join(hungria, hungria.train, by = "id")
-
-# Se divide la base de Suiza en train y test (no tiene muchas observaciones, entonces se opta por 80/20)
-suiza.train <- suiza %>% sample_frac(0.8)
-suiza.test <- anti_join(suiza, suiza.train, by = "id")
 
 # Se divide la base de europa en train y test (tiene bastantes observaciones, entonces se opta por 70/30)
 europa.train <- europa %>% sample_frac(0.8)
@@ -1176,21 +1155,7 @@ modelo.eeuu <-
     data = eeuu.train,
     na.action = na.omit
   )
-modelo.hungria <-
-  glm(
-    num ~ edad_disc + sex,
-    family = binomial,
-    data = hungria.train,
-    na.action = na.omit
-  )
-modelo.suiza <-
-  glm(
-    num ~ edad_disc + sex,
-    family = binomial,
-    data = suiza.train,
-    na.action = na.omit
-  )
-modelo.europa <- 
+modelo.europa <-
   glm(
     num ~ edad_disc + sex,
     family = binomial,
@@ -1200,14 +1165,10 @@ modelo.europa <-
 
 # Se observan los resultados
 printCoefmat(coef(summary(modelo.eeuu)))
-printCoefmat(coef(summary(modelo.hungria)))
-printCoefmat(coef(summary(modelo.suiza)))
 printCoefmat(coef(summary(modelo.europa)))
 
 # Resultados con razon de verosimilitud
 anova(modelo.eeuu, test = "Chisq")
-anova(modelo.hungria, test = "Chisq")
-anova(modelo.suiza, test = "Chisq")
 anova(modelo.europa, test = "Chisq")
 ```
 
