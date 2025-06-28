@@ -1148,14 +1148,14 @@ europa.test <- anti_join(europa, europa.train, by = "id")
 
 # Se obtienen los modelos iniciales
 # Para dejar las observaciones sin nulos: complete.cases(df$x, df$y)
-modelo.eeuu <-
+modelo.inicial.eeuu <-
   glm(
     num ~ edad_disc + sex + cp_categorico,
     family = binomial,
     data = eeuu.train,
     na.action = na.omit
   )
-modelo.europa <-
+modelo.inicial.europa <-
   glm(
     num ~ edad_disc + sex + cp_categorico,
     family = binomial,
@@ -1164,14 +1164,43 @@ modelo.europa <-
   )
 
 # Se observan los resultados
-printCoefmat(coef(summary(modelo.eeuu)))
-printCoefmat(coef(summary(modelo.europa)))
+printCoefmat(coef(summary(modelo.inicial.eeuu)))
+printCoefmat(coef(summary(modelo.inicial.europa)))
 ```
 
 El tipo de dolor en el pecho resultó poco significativo en 2 de sus 4 cactegorías para ambos datos. Entonces, se actualiza el modelo sin esta variable.
 
 ```{r eliminacion_cp}
-modelo.eeuu <- update(modelo.eeuu, . ~ . - cp_categorico)
-modelo.europa <- update(modelo.europa, . ~ . - cp_categorico)
+modelo.inicial.eeuu <- update(modelo.inicial.eeuu, . ~ . - cp_categorico)
+modelo.inicial.europa <- update(modelo.inicial.europa, . ~ . - cp_categorico)
+```
+
+Además de esta última variable, se descartan las variables que presentan una cantidad de nulos superior al $50\%$ en la figura correspondiente. Esto ya que, a la hora de probar el modelo, esos nulos podrían estar presentes en los datos de *testing*, lo cual reduciría el análisis de resultados considerablemente.
+
+Las variables descartadas para ambas bases son:
+
+ - ca: número de venas coloreadas por la prueba de fluoroscopia.
+ - thal: la prueba para evaluar la calidad del flujo sanguíneo al corazón.
+ - slope: la pendiente máxima del segmento ST al hacer ejercicio.
+
+Además, para el caso de la base de Europa, también se descarta la variable fbs (azúcar en sangre estando en ayuno). Pues los datos de Suiza superan el $50\%$ de nulos, lo cual no pasa en la base de EEUU.
+
+Después de la justificación teórica, se procede a considerar el modelo con más variables posibles, descartando las mencionadas anteriormente.
+
+```{r modelos_completos}
+modelo.completo.eeuu <-
+  glm(
+    num ~ edad_disc + sex + trestbps + chol + fbs + restecg_categorico + thalach + exang_categorico + oldpeak,
+    family = binomial,
+    data = europa.train,
+    na.action = na.omit
+  )
+modelo.completo.europa <-
+  glm(
+    num ~ edad_disc + sex + trestbps + chol + restecg_categorico + thalach + exang_categorico + oldpeak,
+    family = binomial,
+    data = europa.train,
+    na.action = na.omit
+  )
 ```
 
