@@ -1,0 +1,864 @@
+---
+title: "Proyecto SNV1"
+author: "Alejandro Brenes, Santiago Fernández, Eyeri Méndez y Erick Venegas"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Introducción
+
+Se cargan las librerías necesarias.
+
+```{r librerias}
+# Si no funciona descargar caret, usen lo siguiente:
+
+# options(repos = c(CRAN = "https://cloud.r-project.org"))
+# remove.packages(c("future", "future.apply", "parallelly", "recipes"))
+# install.packages(c("parallelly", "future", "future.apply", "recipes", "caret"), type = "binary")
+pacman::p_load(ggplot2,
+               readxl,
+               cowplot,
+               dplyr,
+               tidyr,
+               corrplot,
+               future.apply,
+               caret,
+               xgboost,
+               randomForest,
+               tidyverse,
+               pROC,
+               yardstick)
+```
+
+Se lee la base de incendios forestales en Argelia.
+
+```{r base_incendios}
+# Bases de datos
+incendios.B <- read_excel("data/Incendios.xlsx", sheet = "Bejaia")
+incendios.SB <- read_excel("data/Incendios.xlsx", sheet = "Sidi-Bel")
+
+# Se juntan las bases
+incendios <- rbind(incendios.B, incendios.SB)
+
+# Se cambia el nombre de las categorías de la variable Classes
+incendios$Classes <- factor(
+  incendios$Classes,
+  levels = c("not fire", "fire"),
+  labels = c("Sin incendio", "Con incendio")
+)
+
+# Se elimina una observación incoherente
+incendios <- incendios[-166, ]
+
+# Se transforman las columnas afectadas a tipo numérico
+incendios$DC <- round(as.numeric(incendios$DC), 1)
+incendios$FWI <- round(as.numeric(incendios$FWI), 1)
+```
+
+# Resumen descriptivo y análisis de correlación
+
+Como primer paso, se calculan algunas estadísticas descriptivas tanto para cuando ocurrió un incendio como para cuando no. 
+
+```{r filtrar.incendios}
+dias.con.incendios <- subset(incendios, Classes == "Con incendio")
+dias.con.incendios <- dias.con.incendios[, -14]
+
+dias.sin.incendios <- subset(incendios, Classes == "Sin incendio")
+dias.sin.incendios <- dias.sin.incendios[, -14]
+```
+
+```{r resumen.con.incendios}
+incendios.pivot <- dias.con.incendios %>%
+  pivot_longer(cols = everything(),
+               names_to = "variable",
+               values_to = "valor")
+
+resumen.incendios <- incendios.pivot %>%
+  group_by(variable) %>%
+  summarise(
+    promedio = mean(valor, na.rm = TRUE),
+    minimo = min(valor, na.rm = TRUE),
+    mediana = median(valor, na.rm = TRUE),
+    maximo = max(valor, na.rm = TRUE),
+    desviacion = sd(valor, na.rm = TRUE)
+  )
+```
+
+```{r resumen.sin.incendios}
+sin.incendios.pivot <- dias.sin.incendios %>%
+  pivot_longer(cols = everything(),
+               names_to = "variable",
+               values_to = "valor")
+
+resumen.sin.incendios <- sin.incendios.pivot %>%
+  group_by(variable) %>%
+  summarise(
+    promedio = mean(valor, na.rm = TRUE),
+    minimo = min(valor, na.rm = TRUE),
+    mediana = median(valor, na.rm = TRUE),
+    maximo = max(valor, na.rm = TRUE),
+    desviacion = sd(valor, na.rm = TRUE)
+  )
+```
+
+Posteriormente, se realizan gráficos de correlaciones tanta cuando hubo incendio como para cuando no.
+
+```{r correlaciones, fig.width=12, fig.height=10}
+# Correlación de los dias con incendios
+cor.incendios <- cor(dias.con.incendios[, apply(dias.con.incendios, 2, var, na.rm = TRUE) != 0], dias.con.incendios[, apply(dias.con.incendios, 2, var, na.rm = TRUE) != 0]) # Solo valores con varianza mayor a 0
+
+corrplot(
+  cor.incendios,
+  method = "color",
+  type = "upper",
+  order = "hclust",
+  addCoef.col = "black",
+  number.cex = 0.7,
+  number.digits = 3
+)
+
+# Correlación de los dias sin incendios
+cor.sin.incendios <- cor(dias.sin.incendios[, apply(dias.sin.incendios, 2, var, na.rm = TRUE) != 0], dias.sin.incendios[, apply(dias.sin.incendios, 2, var, na.rm = TRUE) != 0]) # Solo valores con varianza mayor a 0
+
+corrplot(
+  cor.sin.incendios,
+  method = "color",
+  type = "upper",
+  order = "hclust",
+  addCoef.col = "black",
+  number.cex = 0.7,
+  number.digits = 3
+)
+```
+
+Ahora las correlaciones sin incluir las fecha
+
+```{r correlaciones.nf, fig.width=12, fig.height=10}
+dias.con.incendios.nf <- dias.con.incendios[, -c(1,2,3)]
+dias.sin.incendios.nf <- dias.sin.incendios[, -c(1,2,3)]
+
+
+cor.sin.incendios.nf <- cor(dias.sin.incendios.nf[, apply(dias.sin.incendios.nf, 2, var, na.rm = TRUE) != 0], dias.sin.incendios.nf[, apply(dias.sin.incendios.nf, 2, var, na.rm = TRUE) != 0]) # Solo valores con varianza mayor a 0
+
+corrplot(
+  cor.sin.incendios.nf,
+  method = "color",
+  type = "upper",
+  order = "hclust",
+  addCoef.col = "black",
+  number.cex = 0.7,
+  number.digits = 3
+)
+
+cor.con.incendios.nf <- cor(dias.con.incendios.nf[, apply(dias.con.incendios.nf, 2, var, na.rm = TRUE) != 0], dias.con.incendios.nf[, apply(dias.con.incendios.nf, 2, var, na.rm = TRUE) != 0]) # Solo valores con varianza mayor a 0
+
+corrplot(
+  cor.con.incendios.nf,
+  method = "color",
+  type = "upper",
+  order = "hclust",
+  addCoef.col = "black",
+  number.cex = 0.7,
+  number.digits = 3
+)
+```
+
+# Gráficos entre variables
+
+Se procede a realizar distintos gráficos entre los valores de las variables presentes en la base.
+Paara esto, se usa como referencia el apartado anterior, graficando solo variables que tengan una correlación mayor a 0.5 (con algunas excepciones).
+
+## Variables vs. FFMC
+
+```{r Variables_FFMC}
+# DMC vs. FFMMC
+ggplot(incendios, aes(x = FFMC, y = DMC, color = Classes)) +
+  geom_point() +
+  labs(x = "FFMC",
+       y = "DMC",
+       color = "") +
+  theme_cowplot()
+
+# DC vs. FFMMC
+ggplot(incendios, aes(x = FFMC, y = DC, color = Classes)) +
+  geom_point() +
+  labs(x = "FFMC",
+       y = "DC",
+       color = "") +
+  theme_cowplot()
+
+# ISI vs. FFMMC
+ggplot(incendios, aes(x = FFMC, y = ISI, color = Classes)) +
+  geom_point() +
+  labs(x = "FFMC",
+       y = "ISI",
+       color = "") +
+  theme_cowplot()
+
+# BUI vs. FFMMC
+ggplot(incendios, aes(x = FFMC, y = BUI, color = Classes)) +
+  geom_point() +
+  labs(x = "FFMC",
+       y = "BUI",
+       color = "") +
+  theme_cowplot()
+
+# FWI vs. FFMMC
+ggplot(incendios, aes(x = FFMC, y = FWI, color = Classes)) +
+  geom_point() +
+  labs(x = "FFMC",
+       y = "FWI",
+       color = "") +
+  theme_cowplot()
+
+# Temperatura vs. FFMMC
+ggplot(incendios, aes(x = FFMC, y = Temperature, color = Classes)) +
+  geom_point() +
+  labs(x = "FFMC",
+       y = "Temperatura",
+       color = "") +
+  theme_cowplot()
+
+# RH vs. FFMMC
+ggplot(incendios, aes(x = FFMC, y = RH, color = Classes)) +
+  geom_point() +
+  labs(x = "FFMC",
+       y = "RH",
+       color = "") +
+  theme_cowplot()
+
+# Lluvia vs. FFMMC
+ggplot(incendios, aes(x = FFMC, y = Rain, color = Classes)) +
+  geom_point() +
+  labs(x = "FFMC",
+       y = "Lluvia",
+       color = "") +
+  theme_cowplot()
+```
+
+## ISI y Temperatura vs. RH
+
+```{r RH_Rain_FFMC}
+# ISI vs. RH
+ggplot(incendios, aes(x = RH, y = ISI, color = Classes)) +
+  geom_point() +
+  labs(x = "RH",
+       y = "ISI",
+       color = "") +
+  theme_cowplot()
+
+# Temperatura vs. RH
+ggplot(incendios, aes(x = RH, y = Temperature, color = Classes)) +
+  geom_point() +
+  labs(x = "RH",
+       y = "Temperatura",
+       color = "") +
+  theme_cowplot()
+```
+
+## Variables vs. FWI
+
+```{r Variables_FWI}
+# DC vs. FWI
+ggplot(incendios, aes(x = FWI, y = DC, color = Classes)) +
+  geom_point() +
+  labs(x = "FWI",
+       y = "DC",
+       color = "") +
+  theme_cowplot()
+
+# DMC vs. FWI
+ggplot(incendios, aes(x = FWI, y = DMC, color = Classes)) +
+  geom_point() +
+  labs(x = "FWI",
+       y = "DMC",
+       color = "") +
+  theme_cowplot()
+
+# BUI vs. FWI
+ggplot(incendios, aes(x = FWI, y = BUI, color = Classes)) +
+  geom_point() +
+  labs(x = "FWI",
+       y = "BUI",
+       color = "") +
+  theme_cowplot()
+
+# Temperatura vs. FWI
+ggplot(incendios, aes(x = FWI, y = Temperature, color = Classes)) +
+  geom_point() +
+  labs(x = "FWI",
+       y = "Temperatura",
+       color = "") +
+  theme_cowplot()
+
+# ISI vs. FWI
+ggplot(incendios, aes(x = FWI, y = ISI, color = Classes)) +
+  geom_point() +
+  labs(x = "FWI",
+       y = "ISI",
+       color = "") +
+  theme_cowplot()
+```
+
+## Variables vs. DC
+
+```{r Vaiables_DC}
+# BUI vs. DC
+ggplot(incendios, aes(x = DC, y = BUI, color = Classes)) +
+  geom_point() +
+  labs(x = "DC",
+       y = "BUI",
+       color = "") +
+  theme_cowplot()
+
+# Temperatura vs. DC
+ggplot(incendios, aes(x = DC, y = Temperature, color = Classes)) +
+  geom_point() +
+  labs(x = "DC",
+       y = "Temperatura",
+       color = "") +
+  theme_cowplot()
+
+# ISI vs. DC
+ggplot(incendios, aes(x = DC, y = ISI, color = Classes)) +
+  geom_point() +
+  labs(x = "DC",
+       y = "ISI",
+       color = "") +
+  theme_cowplot()
+```
+
+## ISI y BUI vs. DMC
+
+```{r ISI_BUI_DMC}
+# ISI vs. DMC
+ggplot(incendios, aes(x = DMC, y = ISI, color = Classes)) +
+  geom_point() +
+  labs(x = "DMC",
+       y = "ISI",
+       color = "") +
+  theme_cowplot()
+
+# BUI vs. DMC
+ggplot(incendios, aes(x = DMC, y = BUI, color = Classes)) +
+  geom_point() +
+  labs(x = "DMC",
+       y = "BUI",
+       color = "") +
+  theme_cowplot()
+```
+
+# Ajuste de los modelos
+
+## Separación de los datos
+
+Debido a la poca cantidad de observaciones en las bases de datos, se realiza una separación 80/20 en los datos de *training* y *testing* respectivamente.
+
+```{r separacion_datos}
+# Semilla para reproducibilidad
+set.seed(0609)
+
+# Se cambia la variable objetivo a numérica, 1 significa que hubo incendio, 0 que no
+incendios <- incendios %>% mutate(Classes = ifelse(Classes == "Con incendio", "Incendio", "No.incendio"))
+
+# Se modifica la variable objetivo como factor
+incendios$Classes <- factor(incendios$Classes, levels = c("Incendio", "No.incendio"))
+
+# Se agrega una columna de id a la base de datos
+incendios$id <- 1:nrow(incendios)
+
+# Se pone de primera la variable de id
+incendios <- incendios %>% select(id, colnames(incendios[, 1:ncol(incendios)]))
+
+# Se obtienen los datos de training y testing
+data.train <- incendios %>% sample_frac(0.8)
+data.test <- anti_join(incendios, data.train, by = "id")
+```
+
+## Random forest
+
+Lo primero es la construcción del modelo. Como ya están creados los datos de entrenamiento y de test, se procede con el cálculo del modelo.
+
+```{r modelo_Random_Forest}
+modelo <- randomForest(
+  Classes ~ . - id,         # No es necesario el id para el modelo
+  data = data.train,        # Se le pasan los datos de entrenamiento
+  ntree = 100,              # Número de árboles
+  importance = TRUE         # Guardar la importancia, para visualización
+)
+```
+
+El código anterior crea el modelo, para observar los resultados, se imprime de la siguiente forma:
+
+```{r print Random Forest}
+print(modelo)
+```
+
+De donde se puede observar que los errores de clasificación son muy bajos, el modelo está clasificando los incendios, como incendios, y solo se equivoca en 3. Cuando se tiene un no incencio, este también se equivoca en 3. Lo cual son números muy bajos y lo que sugiere que la clasificación que el modelo está realizando es muy buena. Como el Random Forest utiliza un método bootstrap, el OOB tirá un error bajo de apenas 3%. 
+
+El siguiente código realiza la validación cruzada del modelo, es decir, va a dividir el conjunto de datos en subconjuntos, donde algunos se usan de prueba y otros se usan de entrenamiento, pero el modelo iterará, lo que hace que se tengan varias rendimientos, y por último, para conseguir el rendmiento del modelo, se hace un promedio simple de los rendmientos obtenidos.
+
+El número de pliegues, o folds, es la cantidad de subconjuntos en la cual se va a partir el conjunto de datos, para el código se utilió 5, pero es un hiperpárametro, se pueden escoger otros, sin embargo, 5 es lo comúnmente utilizado. 
+
+Por otro lado, mtry es otro hiperparámetro que lo que busca es una diferenciación de los árboles, es decir, hacer que los árboles no sean iguales entre sí. 
+
+```{r validación_cruzada_Random_Forest}
+set.seed(0609) # Fijamos la semilla
+
+control <- trainControl(
+  method = "cv", # Método de Validación Cruzada
+  number = 5, # Número de pliegues
+  classProbs = TRUE,
+  summaryFunction = twoClassSummary,
+  verboseIter = TRUE
+)
+
+modelo.rf.cv <- train(
+  Classes ~ . - id,
+  data = data.train,
+  method = "rf",
+  ntree = 100,
+  trControl = control,
+  metric = "ROC"
+)
+
+print(modelo.rf.cv)
+```
+
+Según los resultados anteriores, el ROC más grande se obtiene cuando se toma como hiperparámetro la cantidad de variables aleatorias 7, es decir, el mtry = 7, eso significa que en cada árbol se toman como variables aleatorias para clasificar 7 variables (un mtry muy grande provoca que todos los árboles se parezcan entre sí, sobreajustando el modelo. Un mtry muy pequeño no sobreajusta, pero pierde precisión).
+
+Por otro lado se obtiene la cantidad de recall (sensibilidad) del modelo, que indica el grado de aciertos que tuvo el modelo, es decir, cuántos datos de éxito fueron clasificados como éxito. En este caso, de la cantidad de incendios qué proporción fue clasificada como incendio de verdad. 
+
+Luego, el valor de Spec es el valor de especificidad, que indica la cantidad de no éxitos clasificados como no éxitos correctamente. 
+
+Se presenta ahora el valor de la pérdida logarítimica:
+
+```{r pérdida_logarítmica_Random_Forest}
+probabilidades <- predict(modelo, newdata = data.test, type = "prob")
+
+prob.pos <- probabilidades[, "Incendio"]  
+
+y.true <- ifelse(data.test$Classes == "Incendio", 1, 0)
+
+epsilon <- 1e-15
+prob.pos <- pmin(pmax(prob.pos, epsilon), 1 - epsilon)
+
+log.loss <- -mean(y.true * log(prob.pos) + (1 - y.true) * log(1 - prob.pos))
+print(log.loss)
+```
+
+Un valor cercano a 0 de la pérdida logarítmica implica que el modelo está realizando una buena clasificación. 
+
+Se procede con un gráfico de la importancia de las variables a la hora de predecir. Se presentan los gráficos tanto usando la librería Random Forest, como la librería Caret. Primero con la librería Random Forest.
+
+```{r importancia_Random_Forest}
+imp <- importance(modelo)
+
+# Se transforma a data.frame
+df.imp <- data.frame(
+  Variable = rownames(imp),
+  Importance = imp[, "MeanDecreaseGini"]
+)
+
+# Se ordenan las variables
+df.imp <- df.imp[order(df.imp$Importance, decreasing = TRUE), ]
+
+# Graficamos
+ggplot(df.imp, aes(x = reorder(Variable, Importance), y = Importance)) +
+  geom_col(fill = "darkorange") +
+  coord_flip() +
+  labs(x = "Variable", y = "Importancia") +
+  theme_cowplot()
+```
+
+Según las funciones de la librería Random Forest, se tiene que la variable de mayor importancia es ```FFMC```, seguido por ```ISI```.
+
+Por otro lado, graficando la importancia de las variables utilizando la librería Caret, se tiene lo siguiente:
+
+```{r importancia_Caret}
+imp <- varImp(modelo.rf.cv)  
+
+df.imp <- data.frame(
+  Variable = rownames(imp$importance),
+  Importance = imp$importance$Overall
+)
+
+# Se ordenan las variables por importancia
+df.imp <- df.imp[order(df.imp$Importance, decreasing = TRUE), ]
+
+ggplot(df.imp, aes(x = reorder(Variable, Importance), y = Importance)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(x = "Variable", y = "Importancia") +
+  theme_cowplot()
+```
+
+Hay un cambio entre las dos primeras variables, sin embargo, el modelo se está entrenando de una manera similar, lo que sugiere que el modelo está discriminando bien a la hora de clasificar incendios. 
+
+El siguiente código tiene la intención de evaluar las bondades del modelo, es decir, dar estadísticos para evaluar su precisión y capacidad de predicción/clasificación.
+
+```{r metricas_Random_Forest}
+predicciones <- predict(modelo, newdata = data.test)
+
+# Matriz de confusión
+confusionMatrix(predicciones, data.test$Classes)
+```
+
+Analizando los resultados de este código, se tiene que: 
+
+- Accuracy es de 1, lo que significa que el modelo predice muy bien. 
+- Lo siguiente es el intervalo de confianza donde se encuentran el 95% de los datos.
+- No Information Rate (NIR) es una tasa que significa que si el modelo siempre predijera incendios, entonces el modelo acertaría el 59% de las veces, es decir, ligeramente mejor que al azar. Lo que significa que nuestro clasificador está bien, pues es superior a este valor. 
+- El p-value es simplemente una prueba de hipótesis que se realiza. La hipótesis nula del modelo dice que el modelo de clasificación no es mejor que el modelo que siempre clasifica incendio. En este caso, el valor es muy significativo, por lo que hay evidencia estadística fuerte para rechazar la hipótesis nula. 
+- El índice kappa está dando 1, lo que significa que la suerte no está influyendo en el resultado. Es decir, entre más bajo es el índice kappa, significa que por azar, se está clasificando de manera correcta. Entre más alto significa que el modelo está clasificando correctamente porque aprendió. 
+
+Se grafica la matriz de confusión para su visualización. 
+
+```{r gráfico_matriz_confusión}
+df.pred <- data.frame(
+  truth = data.test$Classes,
+  prediction = predicciones
+)
+
+# Graficamos la matriz de confusión
+conf.mat.plot <- conf_mat(df.pred, truth, prediction)
+
+autoplot(conf.mat.plot, type = "heatmap") +
+  scale_fill_gradient(low = "white", high = "darkred") +
+  theme_cowplot() +
+  labs(x = 'Verdadero',
+       y = 'Predicción')
+```
+
+Se procede con la curva ROC, la cual tiene la intención de presentar de manera gráfica la capacidad del modelo para clasificar.
+
+```{r curva_ROC}
+roc.rf <- roc(
+  response = data.test$Classes,
+  predictor = prob.rf$Incendio,
+  levels = c("No.incendio", "Incendio") # muy importante
+)
+
+plot(roc.rf, col = "#F8766D", lwd = 2, main = "Curva ROC - Random Forest")
+auc(roc.rf)  # Esto da el valor del AUC
+```
+
+## XGBoost
+
+Luego, nos centramos en el XGBoost. Para este caso usamos la librería [caret](https://topepo.github.io/caret/index.html) para obtener el ajuste. En particular, en el método del [XGBoost](https://www-geeksforgeeks-org.translate.goog/machine-learning/different-results-xgboost-vs-caret-in-r/?_x_tr_sl=en&_x_tr_tl=es&_x_tr_hl=es&_x_tr_pto=tc) que ofrece el paquete.
+
+```{r ajuste_xgb}
+# Listas para las iteraciones
+lista.ll <- list()
+lista.int <- list()
+
+# Para ver el número óptimo de iteraciones de validación cruzada, se prueban todos los valores del 1 al 10 y se compara con la pérdida logarítmica
+for (i in 2:5) {
+  # Ciclo para tomar en cuenta la variabilidad de las observaciones
+  for (j in 1:10) {
+    # Se define el control de entrenamiento, esto genera los parámetros que se usarán para el modelo.
+    ## method: Método de remuestreo, en este caso, de validación cruzada
+    ## number: Cantidad de pliegues de la validación cruzada (se puede graficar)
+    ## verboseIter: Para imprimir (TRUE) el registro de entrenamiento
+    ## classProbs: Define si se calculan las probabilidades para las muestras obtenidas del remuestreo
+    ## selectionFunction: Permite definir los parámetros óptimos según una métrica. En este caso, para clasificación binaria
+    ## returnResamp: Permite guardar los remuestreos
+    ## allowParallel: Permite la paralelización
+    control.entrenamiento <-
+      trainControl(
+        method = "cv",
+        number = i,
+        verboseIter = FALSE,
+        classProbs = TRUE,
+        summaryFunction = twoClassSummary
+      )
+    
+    # Se define el modelo del XGBoost. Internamente tiene una variable desactualizada en caret, por lo que puede tirar un warning
+    ## x: Variable objetivo (la que se busca predecir)
+    ## data: Datos a utilizar (debe ser DataFrame)
+    ## method: Método a utilizar, en este caso, XGBoost
+    ## trControl: El objeto con los parámetros óptimos encontrados anteriormente
+    ## metric: La métrica a optimizar. En este caso, la curva ROC
+    modelo.xgb <- train(
+      Classes ~ .,
+      data = data.train,
+      method = "xgbTree",
+      trControl = control.entrenamiento,
+      metric = "ROC",
+      verbose = FALSE
+    )
+    
+    # Se calcula la pérdida logarítmica. Primero se predicen las probabilidades con los datos de testing
+    prediccion.xgb <-
+      predict(modelo.xgb, newdata = data.test, type = "prob")
+    
+    # Se obtienen las observaciones que son incendios
+    prob.incendio <- prediccion.xgb$Incendio
+    
+    # Vector binario para saber si la clase es incendio o no
+    obs.incendio <- data.test$Classes == "Incendio"
+    
+    # Se corrigen las probabilidades de incendio con un epsilon, por los valores extremos de [0, 1]
+    prob.incendio <- pmin(pmax(prob.incendio, 1e-15), 1 - 1e-15)
+    
+    # Se guardan las iteraciones con cada número de iteraciones
+    lista.int[[j]] <- -mean(obs.incendio * log(prob.incendio) + (1 - obs.incendio) * log(1 - prob.incendio))
+  }
+  
+  
+  # Pérdida logarítmica
+  lista.ll[[(i - 1)]] <- c(i, mean(unlist(lista.int)))
+}
+
+# Se pasan los resultados a un DataFrame
+df.logloss <- as.data.frame(do.call(rbind, lista.ll))
+
+# Se cambian los nombres
+colnames(df.logloss) <- c("iter", "logl")
+
+# Se grafica cada resultado obtenido
+ggplot(df.logloss, aes(x = iter, y = logl)) +
+  geom_line(color = "#F8766D") +
+  geom_point(color = "#F8766D",
+             size = 3,
+             shape = 16) +
+  labs(x = "Cantidad de pliegues",
+       y = "Pérdida logarítmica") +
+  theme_cowplot()
+```
+
+Debido a que una pérdida logarítmica menor implica un mejor modelo, se seleccionó el modelo de validación cruzada con 3 iteraciones.
+
+Ahora, se crea un modelo completo, para ver la importancia que tienen todas las variables.
+
+```{r modelo_completo_xgb}
+# Se define el control de entrenamiento, esto genera los parámetros que se usarán para el modelo.
+    ## method: Método de remuestreo, en este caso, de validación cruzada
+    ## number: Cantidad de pliegues de la validación cruzada (se puede graficar)
+    ## verboseIter: Para imprimir (TRUE) el registro de entrenamiento
+    ## classProbs: Define si se calculan las probabilidades para las muestras obtenidas del remuestreo
+    ## selectionFunction: Permite definir los parámetros óptimos según una métrica. En este caso, para clasificación binaria
+    ## returnResamp: Permite guardar los remuestreos
+    ## allowParallel: Permite la paralelización
+    control.entrenamiento <-
+      trainControl(
+        method = "cv",
+        number = 3,
+        verboseIter = FALSE,
+        classProbs = TRUE,
+        summaryFunction = twoClassSummary
+      )
+    
+    # Se define el modelo del XGBoost. Internamente tiene una variable desactualizada en caret, por lo que puede tirar un warning
+    ## En el primer espacio se elige la variable objetivo y las variables a usar
+    ## x: Variable objetivo (la que se busca predecir)
+    ## data: Datos a utilizar (debe ser DataFrame)
+    ## method: Método a utilizar, en este caso, XGBoost
+    ## trControl: El objeto con los parámetros óptimos encontrados anteriormente
+    ## metric: La métrica a optimizar. En este caso, la curva ROC
+    modelo.xgb <- train(
+      Classes ~ .,
+      data = data.train,
+      method = "xgbTree",
+      trControl = control.entrenamiento,
+      metric = "ROC",
+      verbose = FALSE
+    )
+```
+
+Se determina la importancia de las variables.
+
+```{r importancia_completo_xgb}
+# Se guarda la importancia de las variables
+importancia <- varImp(modelo.xgb, scale = FALSE)
+
+# Se deja solo el dataframe
+importancia <- data.frame(variable = rownames(importancia[[1]]),
+                          promedio_importancia = importancia[[1]][, 1])
+
+# Se grafica lo anterior
+ggplot(importancia, aes(x = reorder(variable, promedio_importancia), y = promedio_importancia)) +
+  geom_bar(stat = "identity", fill = "#F8766D") +
+  coord_flip() +
+  labs(x = "Categoría", y = "Valor") +
+  theme_cowplot()
+```
+
+Se seleccionan las variables con más importancia. A saber, ISI y FFMC.
+
+```{r modelo_final_xgb}
+# Se define el control de entrenamiento, esto genera los parámetros que se usarán para el modelo.
+    ## method: Método de remuestreo, en este caso, de validación cruzada
+    ## number: Cantidad de pliegues de la validación cruzada (se puede graficar)
+    ## verboseIter: Para imprimir (TRUE) el registro de entrenamiento
+    ## classProbs: Define si se calculan las probabilidades para las muestras obtenidas del remuestreo
+    ## selectionFunction: Permite definir los parámetros óptimos según una métrica. En este caso, para clasificación binaria
+    ## returnResamp: Permite guardar los remuestreos
+    ## allowParallel: Permite la paralelización
+    control.entrenamiento <-
+      trainControl(
+        method = "cv",
+        number = 3,
+        verboseIter = FALSE,
+        classProbs = TRUE,
+        summaryFunction = twoClassSummary
+      )
+    
+    # Se define el modelo del XGBoost. Internamente tiene una variable desactualizada en caret, por lo que puede tirar un warning
+    ## En el primer espacio se elige la variable objetivo y las variables a usar
+    ## x: Variable objetivo (la que se busca predecir)
+    ## data: Datos a utilizar (debe ser DataFrame)
+    ## method: Método a utilizar, en este caso, XGBoost
+    ## trControl: El objeto con los parámetros óptimos encontrados anteriormente
+    ## metric: La métrica a optimizar. En este caso, la curva ROC
+    modelo.xgb <- train(
+      Classes ~ ISI + FFMC,
+      data = data.train,
+      method = "xgbTree",
+      trControl = control.entrenamiento,
+      metric = "ROC",
+      verbose = FALSE
+    )
+```
+
+En este se pueden ver los parámetros óptimos del modelo, resultados del remuestreo y algunas métricas.
+
+```{r xgb_final}
+modelo.xgb
+```
+
+En este caso, se pueden ver los parámetros óptimos del modelo, en donde:
+  - nrounds: Es la cantidad de iteraciones (o árboles, en este caso) óptima.
+  - max_depth: Es la complejidad (o profundidad del árbol) máxima.
+  - eta (learning rate): Es un parámetro que se usa para ajustar el modelo, este mejora la presición del algoritmo. En concreto, este indica la resistencia del modelo al sobreajuste. (https://primo-tc-na01.hosted.exlibrisgroup.com/primo-explore/fulldisplay?docid=TN_cdi_proquest_journals_2608081906&context=PC&vid=SIBDI&lang=es_CR&search_scope=sibdiucr_completo&adaptor=primo_central_multiple_fe&tab=sibdiucr_tab&query=any,contains,eta%20xgboost&offset=0)
+  - gamma (min split loss): Es un parámetro que indica el aumento mínimo en la función objetivo (el ROC en este caso), para que el árbol se divida (https://xgboost.readthedocs.io/en/stable/parameter.html). Al ser 0, el algoritmo no es muy conservador. Además, este tiene un peso muy significativo en la predicción final del XGBoost (https://primo-tc-na01.hosted.exlibrisgroup.com/primo-explore/fulldisplay?docid=TN_cdi_acm_books_10_1145_3357254_3357290_brief&context=PC&vid=SIBDI&lang=es_CR&search_scope=sibdiucr_completo&adaptor=primo_central_multiple_fe&tab=sibdiucr_tab&query=any,contains,gamma%20xgboost&offset=0)
+
+# Resultados
+
+## Random forest
+
+A
+
+## XGBoost
+
+En este punto, se muestran algunas de las metricas del modelo XGBoost.
+
+Inicialmente, se puede apreciar uno de los árboles de decisión construidos, este corresponde a separar la variable objetivo en aquellas con un valor menor de $ISI \approx 2.6$ y aquellas con un valor mayor.
+
+```{r arbol_xgb}
+# Gráfico de un árbol de decisión
+# xgb.plot.tree(model = modelo.xgb$finalModel, trees = 0)
+```
+
+Se procede a mostrar la [importancia](https://topepo.github.io/caret/variable-importance.html#an-example-2) de cada una de las variables en el modelo, esto en escala del 0 al 1.
+
+```{r importancia_xgb}
+# Se guarda la importancia de las variables
+importancia <- varImp(modelo.xgb, scale = FALSE)
+
+# Se deja solo el dataframe
+importancia <- data.frame(variable = rownames(importancia[[1]]),
+                          promedio_importancia = importancia[[1]][, 1])
+
+# Se grafica lo anterior
+ggplot(importancia, aes(x = reorder(variable, promedio_importancia), y = promedio_importancia)) +
+  geom_bar(stat = "identity", fill = "#F8766D") +
+  coord_flip() +
+  labs(x = "Categoría", y = "Valor") +
+  theme_cowplot()
+```
+
+Se procede con la curva ROC, que fue la métrica que se maximizó en este caso.
+
+```{r roc_xgb}
+# Se predicen las probabilidades con los datos de testing
+prediccion.xgb <-
+  predict(modelo.xgb, newdata = data.test, type = "prob")
+
+# Curva ROC
+roc.xgb <-
+  roc(
+    response = data.test$Classes,
+    predictor = prediccion.xgb$Incendio,
+    levels = c("Incendio", "No.incendio"),
+    direction = ">"
+  )
+
+# Se grafica el ROC
+plot(roc.xgb,
+     col = "#F8766D",
+     lwd = 2,
+     legacy.axes = TRUE)
+
+# Valor del AUC
+auc(roc.xgb)
+
+# Valor del índice de Gini
+cat("Índice de Gini: ", 2 * auc(roc.xgb) - 1)
+```
+
+Se continúa con la matriz de confusión.
+
+```{r matriz_conf_xgb}
+# Cambiamos el tipo de predicción
+prediccion.xgb <- predict(modelo.xgb, newdata = data.test)
+
+# Se extrae la matriz de confusión
+mat.conf.xgb <-
+  confusionMatrix(prediccion.xgb, data.test$Classes, positive = "Incendio")
+
+# Se pasa a data.frame
+mat.conf.xgb <- as.data.frame(mat.conf.xgb$table)
+
+# Se cambia a factor
+mat.conf.xgb$Reference <-
+  factor(mat.conf.xgb$Reference, levels = levels(data.test$Classes))
+mat.conf.xgb$Prediction <-
+  factor(mat.conf.xgb$Prediction, levels = c("No.incendio", "Incendio"))
+
+# Se grafica lo anterior
+ggplot(mat.conf.xgb, aes(x = Prediction, y = Reference, fill = Freq)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = Freq), size = 5, color = "black") +
+  scale_fill_gradient(low = "white", high = "#F8766D") +
+  labs(x = "Predicción",
+       y = "Real") +
+  theme_cowplot() +
+  theme(legend.position = "none")
+```
+
+Se procede con las métricas derivadas de la matriz de confusión.
+
+```{r metricas_xgb}
+# Se recalcula la matriz de confusión, para tenerla en el formato correspondiente
+mat.conf.xgb <-
+  confusionMatrix(prediccion.xgb, data.test$Classes, positive = "Incendio")
+
+# Métricas correspondientes
+cat("La acurracy (exactitud) es: ", mat.conf.xgb$overall["Accuracy"], "\n")
+cat("La sensibilidad es: ", mat.conf.xgb$byClass["Sensitivity"], "\n")
+cat("La especificidad es: ", mat.conf.xgb$byClass["Specificity"], "\n")
+cat("La precisión es: ", mat.conf.xgb$byClass["Precision"])
+```
+
+Finalmente, se tiene la pérdida logarítmica o log-loss.
+
+```{r logloss_xgb}
+# Se predicen las probabilidades con los datos de testing
+prediccion.xgb <-
+  predict(modelo.xgb, newdata = data.test, type = "prob")
+
+# Se obtienen las observaciones que son incendios
+prob.incendio <- prediccion.xgb$Incendio
+
+# Vector binario para saber si la clase es incendio o no
+obs.incendio <- data.test$Classes == "Incendio"
+
+# Se corrigen las probabilidades de incendio con un epsilon, por los valores extremos de [0, 1]
+prob.incendio <- pmin(pmax(prob.incendio, 1e-15), 1 - 1e-15)
+
+# Pérdida logarítmica
+log.loss <- -mean(obs.incendio * log(prob.incendio) + (1 - obs.incendio) * log(1 - prob.incendio))
+cat("La pérdida logarítmica (log-loss) es: ", log.loss)
+```
+
