@@ -5,13 +5,14 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 
-Inicialmente, se obtienen las librarías necesarias para el desarrollo del proyecto.
+Inicialmente, se obtienen las librerías necesarias para el desarrollo del proyecto.
 
 ```{r librerías}
 pacman::p_load(tidyverse,
                dplyr,
                knitr,
                corrplot,
+               caret,
                pROC)
 ```
 
@@ -118,7 +119,6 @@ lb <- lb %>% mutate(num = ifelse(num >= 1, 1, 0))
 hungria <- hungria %>% mutate(num = ifelse(num >= 1, 1, 0))
 suiza <- suiza %>% mutate(num = ifelse(num >= 1, 1, 0))
 ```
-
 
 ## Porcentajes de nulos
 
@@ -244,7 +244,7 @@ ggplot(eeuu, aes(x = num, y = thalach, fill = num)) +
   theme_minimal() +
   theme(legend.position = "none")
 
-# Depresión del segmento ST inducida por el ejercicio en relación con el reposo
+# Depresión del segmento ST inducido por el ejercicio en relación con el reposo
 ggplot(eeuu, aes(x = num, y = oldpeak, fill = num)) +
   geom_boxplot() +
   labs(x = 'Diagnóstico', y = 'Depresión del segmento ST') +
@@ -252,7 +252,7 @@ ggplot(eeuu, aes(x = num, y = oldpeak, fill = num)) +
   theme_minimal() +
   theme(legend.position = "none")
 
-# Ahora, se obtienen los porcentajes de vasos sanguineos coloreados por fluoroscopía, separados por diagnóstico
+# Ahora, se obtienen los porcentajes de vasos sanguíneos coloreados por fluoroscopía, separados por diagnóstico
 porcentajes_ca <- rep(0, 8)
 
 # Se llenan los porcentajes con ciclos
@@ -271,7 +271,7 @@ clases_ca <-
     "porcentajes" = porcentajes_ca
   )
 
-# Gráfico de vasos sanguineos coloreados por fluoroscopía, separados por diagnóstico
+# Gráfico de vasos sanguíneos coloreados por fluoroscopía, separados por diagnóstico
 ggplot(clases_ca, aes(x = ca, y = porcentajes, fill = diagnostico)) +
   geom_bar(stat = "identity", position = "dodge") +
   scale_fill_manual(
@@ -404,7 +404,7 @@ ggplot(eeuu, aes(x = chol, y = thalach, color = num)) +
        y = "Máxima frecuencia cardíaca") +
   theme_minimal()
 
-# Comparación entre colesterol y 
+# Comparación entre colesterol y depresión del segmento ST
 ggplot(eeuu, aes(x = chol, y = oldpeak, color = num)) +
   geom_point() +
   scale_color_manual(
@@ -422,6 +422,7 @@ ggplot(eeuu, aes(x = chol, y = oldpeak, color = num)) +
 ## Columnas numéricas de Europa
 
 Se procede a recrear los escenarios para el caso de los países europeos. 
+
 ```{r var_individual_Euro, warning = FALSE}
 # Edad separada por diagnóstico
 ggplot(europa, aes(x = num, y = age, fill = num)) +
@@ -463,7 +464,7 @@ ggplot(europa, aes(x = num, y = oldpeak, fill = num)) +
   theme_minimal() +
   theme(legend.position = "none")
 
-# Ahora, se obtienen los porcentajes de vasos sanguineos coloreados por fluoroscopía, separados por diagnóstico
+# Ahora, se obtienen los porcentajes de vasos sanguíneos coloreados por fluoroscopía, separados por diagnóstico
 porcentajes_ca_europa <- rep(0, 8)
 
 # Se llenan los porcentajes con ciclos
@@ -482,7 +483,7 @@ clases_ca_europa <-
     "porcentajes" = porcentajes_ca_europa
   )
 
-# Gráfico de vasos sanguineos coloreados por fluoroscopía, separados por diagnóstico
+# Gráfico de vasos sanguíneos coloreados por fluoroscopía, separados por diagnóstico
 ggplot(clases_ca_europa, aes(x = ca, y = porcentajes, fill = diagnostico)) +
   geom_bar(stat = "identity", position = "dodge") +
   scale_fill_manual(
@@ -613,7 +614,7 @@ ggplot(europa, aes(x = chol, y = thalach, color = num)) +
        y = "Máxima frecuencia cardíaca") +
   theme_minimal()
 
-# Comparación entre colesterol y 
+# Comparación entre colesterol y depresión del segmento ST
 ggplot(europa, aes(x = chol, y = oldpeak, color = num)) +
   geom_point() +
   scale_color_manual(
@@ -768,7 +769,7 @@ rm(eeuu.aux, europa.aux, cor.matrix)
 
 ## Variables categóricas - Gráficos de Mosaicos
 
-Se hará una tabla de contingencias, con el fin de encontrar el grado de asociación que poseen las variables, primero se utiliza la base de estados unidos. 
+Se hará una tabla de contingencias, con el fin de encontrar el grado de asociación que poseen las variables, primero se utiliza la base de EEUU. 
 
 ```{r}
 TD1 <- table(eeuu$num, eeuu$sex)
@@ -826,7 +827,7 @@ OR2
 
 Se observa una magnitud proporcionalmente igual en ambos continentes, la probabilidad de padecer la enfermedad aumenta 5 veces más cuando se es hombre. 
 
-Seguidamente, la variable a analizar será ```cp```, la cual hace referencia a la Angina de pecho, para ello, se convierte la variable a factor, es decir a una variable categórica, con el fin de que se realice un procedimiento análogo al anterior.
+Seguidamente, la variable a analizar será ```cp```, la cual hace referencia a la angina de pecho, para ello, se convierte la variable a factor, es decir a una variable categórica, con el fin de que se realice un procedimiento análogo al anterior.
 
 ```{r}
 eeuu$cp_categorico <- as.factor(eeuu$cp)
@@ -925,7 +926,7 @@ mosaicplot(
 )
 ```
 
-El p-value encontrado en la prueba de hipótesis sugiere que hay evidencia estadística para rechazar la hipótesis nula, es decir, que existe cierto grado de asociación, sin embargo, es importante notar que el p-value es relativamente más grande que los calculados anteriormente, lo que sugiere una evidencia estadísticamente débil. 
+El p-value encontrado en la prueba de hipótesis sugiere que hay evidencia estadística para rechazar la hipótesis nula, es decir, que existe cierto grado de asociación, sin embargo, es importante notar que el p-value es relativamente más grande que los calculados anteriormente, lo que sugiere una evidencia estadísticamente más débil. 
 
 Se procede de manera similar con los gráficos, pero de la base de Europa.
 
@@ -1017,7 +1018,7 @@ OR_angina_eeuu = (161 * 159) / (95 * 35)
 OR_angina_eeuu
 ```
 
-Para el caso de Estados Unidos, las personas que presentaron angina inducida por ejercicio, tienen 7 veces más probabilidades de presentar la enfermedad que las personas que no presentaron dicho padecimiento.
+Para este caso las personas que presentaron angina inducida por ejercicio, tienen 7 veces más probabilidades de presentar la enfermedad que las personas que no presentaron dicho padecimiento.
 
 ```{r}
 eeuu$slope_categorico <- as.factor(eeuu$slope)
@@ -1143,7 +1144,7 @@ europa$edad_disc <-
 eeuu.train <- eeuu %>% sample_frac(0.7)
 eeuu.test <- anti_join(eeuu, eeuu.train, by = "id")
 
-# Se divide la base de europa en train y test (tiene bastantes observaciones, entonces se opta por 70/30)
+# Se divide la base de europa en train y test (tiene bastantes observaciones, entonces se opta por 80/20)
 europa.train <- europa %>% sample_frac(0.8)
 europa.test <- anti_join(europa, europa.train, by = "id")
 
@@ -1278,7 +1279,7 @@ summary(modelo.final.eeuu)
 summary(modelo.final.europa)
 ```
 
-aunque el intercepto no resulta significativo, este se mantiene, debido a que el BIC no mejoró sin este.
+Aunque el intercepto no resulta significativo, este se mantiene, debido a que el BIC no mejoró sin este.
 
 # Resultados del modelo
 
@@ -1313,3 +1314,151 @@ prediccion.eeuu <-
 prediccion.europa <-
   predict(modelo.final.europa, newdata = europa.test.limpio, type = "response")
 ```
+
+Seguidamente se visualiza la curva ROC de cada modelo.
+
+```{r curva_ROC}
+# Curva ROC para EEUU
+roc.eeuu <-
+  roc(
+    response = eeuu.test.limpio$num,
+    predictor = prediccion.eeuu,
+    levels = c("0", "1"),
+    direction = "<"
+  )
+
+# Se crea un DataFrame para graficar
+roc.df <- data.frame(
+  specificity = rev(roc.eeuu$specificities),
+  sensitivity = rev(roc.eeuu$sensitivities)
+)
+
+# Se grafica
+ggplot(roc.df, aes(x = 1 - specificity, y = sensitivity)) +
+  geom_line(color = "forestgreen", linewidth = 1.1) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "darkgray", linewidth = 1.05) +
+  coord_equal() +
+  labs(
+    x = "1 - Especificidad",
+    y = "Sensibilidad"
+  ) +
+  theme_minimal()
+
+# Curva ROC para Europa
+roc.europa <-
+  roc(
+    response = europa.test.limpio$num,
+    predictor = prediccion.europa,
+    levels = c("0", "1"),
+    direction = "<"
+  )
+
+# Se crea un DataFrame para graficar
+roc.df <- data.frame(
+  specificity = rev(roc.europa$specificities),
+  sensitivity = rev(roc.europa$sensitivities)
+)
+
+# Se grafica
+ggplot(roc.df, aes(x = 1 - specificity, y = sensitivity)) +
+  geom_line(color = "salmon", linewidth = 1.1) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "darkgrey", linewidth = 1.05) +
+  coord_equal() +
+  labs(
+    x = "1 - Especificidad",
+    y = "Sensibilidad"
+  ) +
+  theme_minimal()
+```
+
+Ahora se determina el área bajo las curvas, o sea el AUC de cada modelo, y adicionalmente el índice de Gini.
+
+```{r AUC_Gini}
+cat("AUC EEUU: ", auc(roc.eeuu))
+cat("\nAUC Europa: ", auc(roc.europa))
+cat("\nÍndice de Gini EEUU: ", 2 * auc(roc.eeuu) - 1)
+cat("\nÍndice de Gini Europa: ", 2 * auc(roc.europa) - 1)
+```
+Ahora se continúa haciendo la matriz de confusión para cada conjunto de datos.
+
+```{r matrices_confusion}
+# Se hace el diagnóstico a partir de las probabilidades de predicción con un umbral de 0.5
+clasificacion.eeuu <- ifelse(prediccion.eeuu >= 0.5, 1, 0)
+clasificacion.eeuu <- factor(clasificacion.eeuu, levels = c(0, 1), labels = c("0", "1"))
+
+# Se extrae la matriz de confusión
+mat.conf.eeuu <-
+  confusionMatrix(clasificacion.eeuu, eeuu.test.limpio$num, positive = "1")
+
+# Se pasa a DataFrame
+mat.conf.eeuu <- as.data.frame(mat.conf.eeuu$table)
+
+# Se cambia a factor
+mat.conf.eeuu$Reference <- 
+  factor(mat.conf.eeuu$Reference, levels = levels(eeuu.test.limpio$num))
+mat.conf.eeuu$Prediction <-
+  factor(mat.conf.eeuu$Prediction, levels = c("1", "0"))
+
+# Se grafica lo anterior
+ggplot(mat.conf.eeuu, aes(x = Prediction, y = Reference, fill = Freq)) +
+  geom_tile(color = "grey") +
+  geom_text(aes(label = Freq), size = 5, color = "black") +
+  scale_fill_gradient(low = "grey", high = "#F8766D") +
+  scale_x_discrete(labels = c("0" = "Sano", "1" = "Enfermo")) +
+  scale_y_discrete(labels = c("0" = "Sano", "1" = "Enfermo")) +
+  labs(x = "Predicción", y = "Real") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Se repite el proceso para Europa
+clasificacion.eur <- ifelse(prediccion.europa >= 0.5, 1, 0)
+clasificacion.eur <- factor(clasificacion.eur, levels = c(0, 1), labels = c("0", "1"))
+
+# Se extrae la matriz de confusión
+mat.conf.eur <-
+  confusionMatrix(clasificacion.eur, europa.test.limpio$num, positive = "1")
+
+# Se pasa a DataFrame
+mat.conf.eur <- as.data.frame(mat.conf.eur$table)
+
+# Se cambia a factor
+mat.conf.eur$Reference <- 
+  factor(mat.conf.eur$Reference, levels = levels(europa.test.limpio$num))
+mat.conf.eur$Prediction <-
+  factor(mat.conf.eur$Prediction, levels = c("1", "0"))
+
+# Se grafica lo anterior
+ggplot(mat.conf.eur, aes(x = Prediction, y = Reference, fill = Freq)) +
+  geom_tile(color = "grey") +
+  geom_text(aes(label = Freq), size = 5, color = "black") +
+  scale_fill_gradient(low = "grey", high = "#F8766D") +
+  scale_x_discrete(labels = c("0" = "Sano", "1" = "Enfermo")) +
+  scale_y_discrete(labels = c("0" = "Sano", "1" = "Enfermo")) +
+  labs(x = "Predicción", y = "Real") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+Finalmente, se calculan las métricas derivadas de las matrices de confusión.
+
+```{r metricas_matrices_conf}
+# Se vuelven a recalcular las matrices
+mat.conf.eeuu <-
+  confusionMatrix(clasificacion.eeuu, eeuu.test.limpio$num, positive = "1")
+
+mat.conf.eur <-
+  confusionMatrix(clasificacion.eur, europa.test.limpio$num, positive = "1")
+
+# Métricas correspondientes para cada región
+cat("La acurracy (exactitud) en EEUU es: ", mat.conf.eeuu$overall["Accuracy"], "\n")
+cat("La sensibilidad en EEUU es: ", mat.conf.eeuu$byClass["Sensitivity"], "\n")
+cat("La especificidad en EEUUes: ", mat.conf.eeuu$byClass["Specificity"], "\n")
+cat("La precisión en EEUU es: ", mat.conf.eeuu$byClass["Precision"], "\n")
+
+cat("La acurracy (exactitud) en Europa es: ", mat.conf.eur$overall["Accuracy"], "\n")
+cat("La sensibilidad en Europa es: ", mat.conf.eur$byClass["Sensitivity"], "\n")
+cat("La especificidad en Europa es: ", mat.conf.eur$byClass["Specificity"], "\n")
+cat("La precisión en Europa es: ", mat.conf.eur$byClass["Precision"])
+```
+
+
