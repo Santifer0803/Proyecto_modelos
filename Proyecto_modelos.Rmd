@@ -775,6 +775,10 @@ rm(eeuu.aux, europa.aux, cor.matrix)
 Se hará una tabla de contingencias, con el fin de encontrar el grado de asociación que poseen las variables, primero se utiliza la base de EEUU. 
 
 ```{r}
+# Se introduce el sexo como factor
+eeuu$sex <- factor(eeuu$sex, levels = c(0, 1), labels = c("Mujer", "Hombre"))
+
+# Tabla
 TD1 <- table(eeuu$num, eeuu$sex)
 
 # Se asignan nombres descriptivos
@@ -802,6 +806,10 @@ Al calcular el Odd's ratio se encuentra que los hombres tienen aproximadamente 5
 Repetimos el mismo procedimiento para las variables de Europa. 
 
 ```{r}
+# Se introduce el sexo como factor
+europa$sex <- factor(europa$sex, levels = c(0, 1), labels = c("Mujer", "Hombre"))
+
+# Tabla
 TD2 <- table(europa$num, europa$sex)
 
 # Se asignan nombres descriptivos
@@ -833,7 +841,17 @@ Se observa una magnitud proporcionalmente igual en ambos continentes, la probabi
 Seguidamente, la variable a analizar será ```cp```, la cual hace referencia a la angina de pecho, para ello, se convierte la variable a factor, es decir a una variable categórica, con el fin de que se realice un procedimiento análogo al anterior.
 
 ```{r}
-eeuu$cp_categorico <- as.factor(eeuu$cp)
+eeuu$cp_categorico <-
+  factor(
+    eeuu$cp,
+    levels = c(1, 2, 3, 4),
+    labels = c(
+      "Angina Típica",
+      "Angina Atípica",
+      "Dolor sin Angina",
+      "Asintomático"
+    )
+  )
 ```
 
 Se procede con la creación de una tabla auxiliar.
@@ -871,7 +889,17 @@ De la prueba anterior, se dice que hay evidencia estadística para rechazar la h
 Se procede de manera similar, pero ahora con la base de Europa. 
 
 ```{r}
-europa$cp_categorico <- as.factor(europa$cp)
+europa$cp_categorico <-
+  factor(
+    europa$cp,
+    levels = c(1, 2, 3, 4),
+    labels = c(
+      "Angina Típica",
+      "Angina Atípica",
+      "Dolor sin Angina",
+      "Asintomático"
+    )
+  )
 
 TD4 <- table(europa$num, europa$cp_categorico)
 
@@ -905,7 +933,13 @@ Las conclusiones para este caso son las mismas, las personas asintomáticas pres
 Luego, la variable analizada es el electrocardiograma en reposo. 
 
 ```{r}
-eeuu$restecg_categorico <- as.factor(eeuu$restecg)
+eeuu$restecg_categorico <- factor(
+  eeuu$restecg,
+  levels = c(0, 1, 2),
+  labels = c("Normal",
+             "ST-T",
+             "Hipertrofia")
+)
 
 TD5 <- table(eeuu$num, eeuu$restecg_categorico)
 
@@ -934,7 +968,13 @@ El p-value encontrado en la prueba de hipótesis sugiere que hay evidencia estad
 Se procede de manera similar con los gráficos, pero de la base de Europa.
 
 ```{r}
-europa$restecg_categorico <- as.factor(europa$restecg)
+europa$restecg_categorico <- factor(
+  europa$restecg,
+  levels = c(0, 1, 2),
+  labels = c("Normal",
+             "ST-T",
+             "Hipertrofia")
+)
 
 TD6 <- table(europa$num, europa$restecg_categorico)
 
@@ -958,7 +998,7 @@ En el caso de Europa, se tiene que el p-value fue superior al 5% por lo que no s
 Se cambia la variable objetivo, la cual es la angina producida por ejercicio, con el fin de determinar el grado de influencia entre variables.
 
 ```{r}
-eeuu$exang_categorico <- as.factor(eeuu$exang)
+eeuu$exang_categorico <- factor(eeuu$exang, levels = c(0, 1), labels = c("No", "Si"))
 
 TD7 <- table(eeuu$num, eeuu$exang_categorico)
 
@@ -978,7 +1018,7 @@ mosaicplot(
 Para la variable ```exang``` se presenta una relación con la variable respuesta. Hay evidencia estadística suficiente para rechazar la hipótesis nula. 
 
 ```{r}
-europa$exang_categorico <- as.factor(europa$exang)
+europa$exang_categorico <- factor(europa$exang, levels = c(0, 1), labels = c("No", "Si"))
 
 TD8 <- table(europa$num, europa$exang_categorico)
 
@@ -1360,7 +1400,7 @@ En ambos gráficos se observa una curva casi constante en 0, lo cual indica que 
 
 Ahora, para comprobar que las covariables se encuantran en la escala correcta, se grafican los residuos parciales contra su respectiva covariable.
 
-```{r residuos_parciales}
+```{r residuos_parciales_numericas}
 # Residuos parciales del mayor ritmo cardíaco registrado (thalach) para EEUU y Europa
 visreg(modelo.final.eeuu, "thalach", partial = TRUE, gg = TRUE) +
   geom_point(color = "forestgreen", size = 1.5) +
@@ -1390,7 +1430,7 @@ visreg(modelo.final.eeuu, "oldpeak", partial = TRUE, gg = TRUE) +
 
 En todos los gráficos se observa una relación lineal, indicando que las variables numéricas no requieren ninguna transformación.
 
-
+Como no se hace interpretación en este proyecto, las variables categóricas no son consideradas en este tipo de análisis.
 
 # Resultados del modelo
 
