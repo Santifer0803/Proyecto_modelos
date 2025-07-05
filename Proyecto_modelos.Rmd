@@ -1332,8 +1332,8 @@ residuos.eeuu <- qresid(modelo.final.eeuu)
 residuos.europa <- qresid(modelo.final.europa)
 
 # Se estandarizan los residuos
-residuos.std.eeuu <- residuos.eeuu / sqrt(1 - hatvalues(modelo.final.eeuu))
-residuos.std.europa <- residuos.europa / sqrt(1 - hatvalues(modelo.final.europa))
+residuos.std.eeuu <- residuos.eeuu / (sqrt(1 - hatvalues(modelo.final.eeuu)))
+residuos.std.europa <- residuos.europa / (sqrt(1 - hatvalues(modelo.final.europa)))
 
 # Dataframe para residuos durante el tiempo de EEUU y Europa
 df.residuos.eeuu <- data.frame(t_1 = residuos.std.eeuu[-length(residuos.std.eeuu)],
@@ -1461,7 +1461,34 @@ ggplot(residuos.cuantiles.europa, aes(sample = residuos)) +
 
 Ambos gráficos muestran sus puntos mayoritariamente sobre la identidad, mostrando así que la distribución binomial es la indicada para los modelos.
 
+Para ver si hay valores atípicos, se buscan residuos excesivamente grandes en valor absoluto.
 
+```{r residuos_atipicos}
+# Se muestran los valores
+cbind(max(abs(residuos.std.eeuu)), max(abs(residuos.std.europa)))
+
+# Se identifican las observaciones
+eeuu.train.limpio[which.max(abs(residuos.std.eeuu)), ]
+europa.train.limpio[which.max(abs(residuos.std.europa)), ]
+```
+
+En el caso de Estados Unidos se puede observar a un hombre de 62 años, con alto colesterol y con un ritmo cardíaco muy bajo, pero este no posee la enfermedad en estudio. Posiblemente, se trate de una persona con otra enfermedad.
+
+Para el caso de Europa, se puede ver una mujer de 52 años, con un alto nivel de colesterol y con un ritmo cardiaco moderado (debido a que estuvieron haciendo ejercicio), pero que tampoco presenta la enfermedad. En este caso, se podría tratar de una enfermedad con respecto al nivel de colesterol de la persona, aunque no es lo que se mide en este caso.
+
+Antes de considerar alterar estas observaciones, se confirma si estas tienen una alta influencia según otras métricas.
+
+```{r metricas_influencia}
+# Se calculan las métricas
+metricas.eeuu <- influence.measures(modelo.final.eeuu)
+metricas.europa <- influence.measures(modelo.final.europa)
+
+# Se mide si estas son muy elevadas
+colSums(metricas.eeuu$is.inf)
+colSums(metricas.europa$is.inf)
+```
+
+La razón de covarianza y el apalancamiento indican algunas observaciones influyentes, al igual que la métrica de dffit en el caso de Estados Unidos.
 
 # Resultados del modelo
 
