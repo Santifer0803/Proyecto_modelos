@@ -15,7 +15,8 @@ pacman::p_load(tidyverse,
                caret,
                pROC,
                statmod,
-               visreg)
+               visreg
+               )
 ```
 
 # Bases desagregadas
@@ -1360,8 +1361,35 @@ En ambos gráficos se observa una curva casi constante en 0, lo cual indica que 
 Ahora, para comprobar que las covariables se encuantran en la escala correcta, se grafican los residuos parciales contra su respectiva covariable.
 
 ```{r residuos_parciales}
-termplot(modelo.final.eeuu, partial.resid = TRUE)
+# Residuos parciales del mayor ritmo cardíaco registrado (thalach) para EEUU y Europa
+visreg(modelo.final.eeuu, "thalach", partial = TRUE, gg = TRUE) +
+  geom_point(color = "forestgreen", size = 1.5) +
+  labs(
+    x = "thalach",
+    y = "Residuo parcial"
+  ) +
+  theme_minimal()
+
+visreg(modelo.final.europa, "thalach", partial = TRUE, gg = TRUE) +
+  geom_point(color = "salmon", size = 1.5) +
+  labs(
+    x = "thalach",
+    y = "Residuo parcial"
+  ) +
+  theme_minimal()
+
+# Residuos parciales de la depresión en el segmento ST inducida por ejercicio con respecto a estar en reposo (oldpeak) para EEUU
+visreg(modelo.final.eeuu, "oldpeak", partial = TRUE, gg = TRUE) +
+  geom_point(color = "forestgreen", size = 1.5) +
+  labs(
+    x = "oldpeak",
+    y = "Residuo parcial"
+  ) +
+  theme_minimal()
 ```
+
+En todos los gráficos se observa una relación lineal, indicando que las variables numéricas no requieren ninguna transformación.
+
 
 
 # Resultados del modelo
