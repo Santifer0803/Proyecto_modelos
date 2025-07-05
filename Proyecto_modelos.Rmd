@@ -14,7 +14,8 @@ pacman::p_load(tidyverse,
                corrplot,
                caret,
                pROC,
-               statmod)
+               statmod,
+               visreg)
 ```
 
 # Bases desagregadas
@@ -1332,10 +1333,10 @@ ajuste.europa <- data.frame(
   residuos  = residuos.std.europa
 )
 
-# Gráfico
+# Gráfico de valores ajustados contra residuos
 ggplot(ajuste.eeuu, aes(x = ajustados, y = residuos)) +
-  geom_point(color = "blue", size = 2) +
-  geom_smooth(method = "loess", se = FALSE, color = "red") +
+  geom_point(color = "forestgreen", size = 2) +
+  geom_smooth(method = "loess", se = FALSE, color = "#D6E12D") +
   labs(
     x = "Valores ajustados",
     y = "Residuos de cuartil estandarizados"
@@ -1344,14 +1345,22 @@ ggplot(ajuste.eeuu, aes(x = ajustados, y = residuos)) +
   theme(axis.text.y = element_text(angle = 0))
 
 ggplot(ajuste.europa, aes(x = ajustados, y = residuos)) +
-  geom_point(color = "blue", size = 2) +
-  geom_smooth(method = "loess", se = FALSE, color = "red") +
+  geom_point(color = "salmon", size = 2) +
+  geom_smooth(method = "loess", se = FALSE, color = "#D6E12D") +
   labs(
     x = "Valores ajustados",
     y = "Residuos de cuartil estandarizados"
   ) +
   theme_minimal() +
   theme(axis.text.y = element_text(angle = 0))
+```
+
+En ambos gráficos se observa una curva casi constante en 0, lo cual indica que la función de enlace es adecuada. Además, parece que la variación de los puntos es constante, sugiriendo que la función de varianza seleccionada funciona correctamente.
+
+Ahora, para comprobar que las covariables se encuantran en la escala correcta, se grafican los residuos parciales contra su respectiva covariable.
+
+```{r residuos_parciales}
+termplot(modelo.final.eeuu, partial.resid = TRUE)
 ```
 
 
