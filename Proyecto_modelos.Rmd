@@ -13,7 +13,8 @@ pacman::p_load(tidyverse,
                knitr,
                corrplot,
                caret,
-               pROC)
+               pROC,
+               statmod)
 ```
 
 # Bases desagregadas
@@ -1280,6 +1281,19 @@ summary(modelo.final.europa)
 ```
 
 Aunque el intercepto no resulta significativo, este se mantiene, debido a que el BIC no mejoró sin este.
+
+A continuación, se muestran algunos diagnósticos para comprobar el rendimiento de los modelos. Inicialmente, se calculan los residuos cuantílicos, considerando que la variable respuesta es binaria.
+
+```{r residuos}
+# Cálculo de residuos
+residuos.eeuu <- qresid(modelo.final.eeuu)
+residuos.europa <- qresid(modelo.final.europa)
+
+# Se estandarizan los residuos
+residuos.std.eeuu <- residuos.eeuu / sqrt(1 - hatvalues(modelo.final.eeuu))
+residuos.std.eeuu <- residuos.europa / sqrt(1 - hatvalues(modelo.final.europa))
+```
+
 
 # Resultados del modelo
 
