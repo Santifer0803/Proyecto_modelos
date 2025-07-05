@@ -1282,9 +1282,9 @@ summary(modelo.final.europa)
 
 Aunque el intercepto no resulta significativo, este se mantiene, debido a que el BIC no mejoró sin este.
 
-A continuación, se muestran algunos diagnósticos para comprobar el rendimiento de los modelos. Inicialmente, se calculan los residuos cuantílicos, considerando que la variable respuesta es binaria.
+A continuación, se muestran algunos diagnósticos para comprobar el rendimiento de los modelos. Inicialmente, se calculan los residuos cuantílicos, considerando que la variable respuesta es binaria, para comprobar el supuesto de independencia del modelo.
 
-```{r residuos}
+```{r lagplots}
 # Cálculo de residuos
 residuos.eeuu <- qresid(modelo.final.eeuu)
 residuos.europa <- qresid(modelo.final.europa)
@@ -1316,6 +1316,44 @@ ggplot(df.residuos.europa, aes(x = t_1, y = t)) +
   ) +
   theme_minimal()
 ```
+
+En ambos gráficos no se observan patrones, entonces, parece no haber dependencia entre los residuos.
+
+Ahora, se muestran los residuos contra los valores ajustados $\hat{\mu}$.
+
+```{r residuos_vs_mu, message = FALSE}
+# Se juntan los datos en DataFrames
+ajuste.eeuu <- data.frame(
+  ajustados = fitted(modelo.final.eeuu),
+  residuos  = residuos.std.eeuu
+)
+ajuste.europa <- data.frame(
+  ajustados = fitted(modelo.final.europa),
+  residuos  = residuos.std.europa
+)
+
+# Gráfico
+ggplot(ajuste.eeuu, aes(x = ajustados, y = residuos)) +
+  geom_point(color = "blue", size = 2) +
+  geom_smooth(method = "loess", se = FALSE, color = "red") +
+  labs(
+    x = "Valores ajustados",
+    y = "Residuos de cuartil estandarizados"
+  ) +
+  theme_minimal() +
+  theme(axis.text.y = element_text(angle = 0))
+
+ggplot(ajuste.europa, aes(x = ajustados, y = residuos)) +
+  geom_point(color = "blue", size = 2) +
+  geom_smooth(method = "loess", se = FALSE, color = "red") +
+  labs(
+    x = "Valores ajustados",
+    y = "Residuos de cuartil estandarizados"
+  ) +
+  theme_minimal() +
+  theme(axis.text.y = element_text(angle = 0))
+```
+
 
 # Resultados del modelo
 
