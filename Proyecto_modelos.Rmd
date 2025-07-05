@@ -1272,14 +1272,14 @@ modelo.completo.europa <-
     na.action = na.omit
   )
 
-# Se construye el modelo sin siquiera intercepto
+# Se construye el modelo nulo
 modelo.nulo.eeuu <-
-  glm(num ~ 0,
+  glm(num ~ 1,
       family = binomial,
       data = eeuu.train.limpio,
       na.action = na.omit)
 modelo.nulo.europa <-
-  glm(num ~ 0,
+  glm(num ~ 1,
       family = binomial,
       data = europa.train.limpio,
       na.action = na.omit)
@@ -1428,9 +1428,40 @@ visreg(modelo.final.eeuu, "oldpeak", partial = TRUE, gg = TRUE) +
   theme_minimal()
 ```
 
-En todos los gráficos se observa una relación lineal, indicando que las variables numéricas no requieren ninguna transformación.
+En todos los gráficos se observa una relación lineal, indicando que las variables numéricas no requieren ninguna transformación. Como no se hace interpretación en este proyecto, las variables categóricas no son consideradas en este tipo de análisis.
 
-Como no se hace interpretación en este proyecto, las variables categóricas no son consideradas en este tipo de análisis.
+Luego, se muestra un gráfico Q-Q para confirmar si la distribución escogida en la adecuada.
+
+```{r qq_plot}
+# Se crea el dataframe para los residuos
+residuos.cuantiles.eeuu <- data.frame(residuos = residuos.std.eeuu)
+residuos.cuantiles.europa <- data.frame(residuos = residuos.std.europa)
+
+# Se calculan los cuantiles teóricos
+residuos.cuantiles.eeuu <- residuos.cuantiles.eeuu |>
+  mutate(teorico = qqnorm(residuos, plot.it = FALSE)$x)
+residuos.cuantiles.europa <- residuos.cuantiles.europa |>
+  mutate(teorico = qqnorm(residuos, plot.it = FALSE)$x)
+
+# Se muestran los QQ-plots
+ggplot(residuos.cuantiles.eeuu, aes(sample = residuos)) +
+  stat_qq() +
+  stat_qq_line(color = "forestgreen") +
+  labs(x = "Cuantiles teóricos",
+       y = "Cuantiles muestrales") +
+  theme_minimal()
+
+ggplot(residuos.cuantiles.europa, aes(sample = residuos)) +
+  stat_qq() +
+  stat_qq_line(color = "salmon") +
+  labs(x = "Cuantiles teóricos",
+       y = "Cuantiles muestrales") +
+  theme_minimal()
+```
+
+Ambos gráficos muestran sus puntos mayoritariamente sobre la identidad, mostrando así que la distribución binomial es la indicada para los modelos.
+
+
 
 # Resultados del modelo
 
