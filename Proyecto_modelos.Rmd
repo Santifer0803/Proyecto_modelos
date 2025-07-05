@@ -1291,9 +1291,31 @@ residuos.europa <- qresid(modelo.final.europa)
 
 # Se estandarizan los residuos
 residuos.std.eeuu <- residuos.eeuu / sqrt(1 - hatvalues(modelo.final.eeuu))
-residuos.std.eeuu <- residuos.europa / sqrt(1 - hatvalues(modelo.final.europa))
-```
+residuos.std.europa <- residuos.europa / sqrt(1 - hatvalues(modelo.final.europa))
 
+# Dataframe para residuos durante el tiempo de EEUU y Europa
+df.residuos.eeuu <- data.frame(t_1 = residuos.std.eeuu[-length(residuos.std.eeuu)],
+                          t = residuos.std.eeuu[-1])
+df.residuos.europa <- data.frame(t_1 = residuos.std.europa[-length(residuos.std.europa)],
+                          t = residuos.std.europa[-1])
+
+# Residuos durante el tiempo (lagplot), para ver independencia
+ggplot(df.residuos.eeuu, aes(x = t_1, y = t)) +
+  geom_point(color = "forestgreen", size = 2) +
+  labs(
+    x = "Residuo en el tiempo t-1",
+    y = "Residuo en el tiempo t"
+  ) +
+  theme_minimal()
+
+ggplot(df.residuos.europa, aes(x = t_1, y = t)) +
+  geom_point(color = "salmon", size = 2) +
+  labs(
+    x = "Residuo en el tiempo t-1",
+    y = "Residuo en el tiempo t"
+  ) +
+  theme_minimal()
+```
 
 # Resultados del modelo
 
