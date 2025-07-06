@@ -1486,9 +1486,31 @@ metricas.europa <- influence.measures(modelo.final.europa)
 # Se mide si estas son muy elevadas
 colSums(metricas.eeuu$is.inf)
 colSums(metricas.europa$is.inf)
+
+# Se guarda el BIC para comparar
+bic.anterior <- c(BIC(modelo.final.eeuu), BIC(modelo.final.europa))
+
+# Se crea el modelo sin las observaciones influyentes, para ver si mejora el BIC
+modelo.eeuu.mod <-
+  update(modelo.final.eeuu, subset = -which(rowSums(metricas.eeuu$is.inf) > 0))
+modelo.europa.mod <-
+  update(modelo.final.europa, subset = -which(rowSums(metricas.europa$is.inf) > 0))
+
+# Se comparan los BIC
+data.frame(original = bic.anterior,
+           modificado = c(BIC(modelo.eeuu.mod), BIC(modelo.europa.mod)),
+            row.names = c("EEUU", "Europa"))
+
+# Se obtiene el porcentaje de observaciones que son influyentes por alguna métrica
+sum(rowSums(metricas.eeuu$is.inf) > 0) / nrow(eeuu.train.limpio)
+sum(rowSums(metricas.europa$is.inf) > 0) / nrow(europa.train.limpio)
+
+# Como los nuevos modelos mejoran el BIC, estos se sustituyen por los modelos finales
+modelo.final.eeuu <- modelo.eeuu.mod
+modelo.final.europa <- modelo.europa.mod
 ```
 
-La razón de covarianza y el apalancamiento indican algunas observaciones influyentes, al igual que la métrica de dffit en el caso de Estados Unidos.
+La razón de covarianza y el apalancamiento indican algunas observaciones influyentes, al igual que la métrica de dffit en el caso de Estados Unidos. Entonces, se eliminan las observaciones del modelo en las que hay una concentración de influencia, debido a que mejoran drásticamente el BIC de ambos modelos.
 
 # Resultados del modelo
 
