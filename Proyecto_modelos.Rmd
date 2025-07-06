@@ -1524,7 +1524,11 @@ sum(rowSums(metricas.europa$is.inf) > 1) / nrow(europa.train.limpio)
 modelo.final.europa <- modelo.europa.mod
 ```
 
-La razón de covarianza y el apalancamiento indican algunas observaciones influyentes, al igual que la métrica de dffit en el caso de Estados Unidos. Entonces, se eliminan las observaciones del modelo en las que hay una concentración de influencia, debido a que mejoran drásticamente el BIC de ambos modelos.
+La razón de covarianza y el apalancamiento indican algunas observaciones influyentes, al igual que la métrica de dffit en el caso de Estados Unidos.
+
+Entonces, se eliminan las observaciones del modelo en las que hay una concentración de influencia en EEUU, debido a que mejoran drásticamente el BIC y no representan una gran cantidad de datos del total, siendo esta alrededor de un $5\%$.
+
+Para el caso de Europa, aunque se mejora el BIC, las observaciones influyentes representan más de un $9\%$, lo cual se considera una cantidad considerable. En cambio, en este caso se suprimieron aquellas observaciones que eran influyentes en más de una métrica a la vez, resultando en una mejora del BIC original y dejando de considerar menos de un $3\%$ de los datos.
 
 # Resultados del modelo
 
@@ -1705,5 +1709,3 @@ cat("La sensibilidad en Europa es: ", mat.conf.eur$byClass["Sensitivity"], "\n")
 cat("La especificidad en Europa es: ", mat.conf.eur$byClass["Specificity"], "\n")
 cat("La precisión en Europa es: ", mat.conf.eur$byClass["Precision"])
 ```
-
-
