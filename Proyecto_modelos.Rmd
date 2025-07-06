@@ -1505,8 +1505,22 @@ data.frame(original = bic.anterior,
 sum(rowSums(metricas.eeuu$is.inf) > 0) / nrow(eeuu.train.limpio)
 sum(rowSums(metricas.europa$is.inf) > 0) / nrow(europa.train.limpio)
 
-# Como los nuevos modelos mejoran el BIC, estos se sustituyen por los modelos finales
+# Como los nuevos modelos mejoran el BIC y, en el caso de EEUU no representan una gran cantidad de datos, se cambia el modelo final por el modificado, sin observaciones influyentes
 modelo.final.eeuu <- modelo.eeuu.mod
+
+# Se prueba eliminando las observaciones que son influyentes por más de 2 de las métricas
+modelo.europa.mod <-
+  update(modelo.final.europa, subset = -which(rowSums(metricas.europa$is.inf) > 1))
+
+# Se comparan los BIC
+data.frame(original = bic.anterior,
+           modificado = c(BIC(modelo.eeuu.mod), BIC(modelo.europa.mod)),
+            row.names = c("EEUU", "Europa"))
+
+# Porcentaje de influyentes identificados
+sum(rowSums(metricas.europa$is.inf) > 1) / nrow(europa.train.limpio)
+
+# Se modifica el modelo
 modelo.final.europa <- modelo.europa.mod
 ```
 
