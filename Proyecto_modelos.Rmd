@@ -774,7 +774,7 @@ rm(eeuu.aux, europa.aux, cor.matrix)
 
 Se hará una tabla de contingencias, con el fin de encontrar el grado de asociación que poseen las variables, primero se utiliza la base de EEUU. 
 
-```{r gráfico mosaico sexo EEUU}
+```{r grafico_mosaico_sexo_EEUU}
 # Se introduce el sexo como factor
 eeuu$sex <- factor(eeuu$sex, levels = c(0, 1), labels = c("Mujer", "Hombre"))
 
@@ -796,7 +796,7 @@ chisq.test(TD1)
 mosaicplot(TD1, color = c("#66c2a5", "#fc8d62"), main = 'Gráfico de Mosaico')
 ```
 
-```{r odd sexo vs enfermedad EEUU}
+```{r odd_sexo_enfermedad_EEUU}
 OR1 <- (260 * 75) / (140 * 28)  # (Enf_Hombres * Sanas_Mujeres) / (Sanos_Hombres * Enf_Mujeres)
 OR1
 ```
@@ -805,7 +805,7 @@ Al calcular el Odd's ratio se encuentra que los hombres tienen aproximadamente 5
 
 Repetimos el mismo procedimiento para las variables de Europa. 
 
-```{r Gráfico Mosaico Europa}
+```{r grafico_mosaico_sexo_europa}
 # Se introduce el sexo como factor
 europa$sex <- factor(europa$sex, levels = c(0, 1), labels = c("Mujer", "Hombre"))
 
@@ -831,7 +831,7 @@ Al igual que en la tabla de Estados Unidos, se observa que existe suficiente evi
 
 Se procede a calcular el Odd's Ratio, con el fin de verificar la magnitud de esta asociación. 
 
-```{r Odd Sexo Europa}
+```{r odd_sexo_europa}
 OR2 <- (199 * 69) / (127 * 22)  # (Enf_Hombres * Sanas_Mujeres) / (Sanos_Hombres * Enf_Mujeres)
 OR2
 ```
@@ -842,7 +842,7 @@ Seguidamente, la variable a analizar será ```cp```, la cual hace referencia a l
 
 Se procede con la creación de una tabla auxiliar.
 
-```{r Gráfico Mosaico Tipo Angina EEUU}
+```{r grafico_mosaico_tipo_angina_EEUU}
 eeuu$cp_categorico <-
   factor(
     eeuu$cp,
@@ -886,7 +886,7 @@ De la prueba anterior, se dice que hay evidencia estadística para rechazar la h
 
 Se procede de manera similar, pero ahora con la base de Europa. 
 
-```{r Gráfico Mosaico Europa}
+```{r grafico_mosaico_tipo_angina_europa}
 europa$cp_categorico <-
   factor(
     europa$cp,
@@ -930,7 +930,7 @@ Las conclusiones para este caso son las mismas, las personas asintomáticas pres
 
 Luego, la variable analizada es el electrocardiograma en reposo. 
 
-```{r Gráfico Mosaico EGC EEUU}
+```{r grafico_mosaico_egc_EEUU}
 eeuu$restecg_categorico <- factor(
   eeuu$restecg,
   levels = c(0, 1, 2),
@@ -965,7 +965,7 @@ El p-value encontrado en la prueba de hipótesis sugiere que hay evidencia estad
 
 Se procede de manera similar con los gráficos, pero de la base de Europa.
 
-```{r Gráfico Mosaico EGC Europa}
+```{r grafico_mosaico_egc_europa}
 europa$restecg_categorico <- factor(
   europa$restecg,
   levels = c(0, 1, 2),
@@ -995,7 +995,7 @@ En el caso de Europa, se tiene que el p-value fue superior al 5% por lo que no s
 
 Se cambia la variable objetivo, la cual es la angina producida por ejercicio, con el fin de determinar el grado de influencia entre variables.
 
-```{r Gráfico Mosaico Angina EEUU}
+```{r grafico_mosaico_angina_EEUU}
 eeuu$exang_categorico <- factor(eeuu$exang, levels = c(0, 1), labels = c("No", "Si"))
 
 TD7 <- table(eeuu$num, eeuu$exang_categorico)
@@ -1015,7 +1015,7 @@ mosaicplot(
 
 Para la variable ```exang``` se presenta una relación con la variable respuesta. Hay evidencia estadística suficiente para rechazar la hipótesis nula. 
 
-```{r Gráfico Mosaico Angina Europa}
+```{r grafico_mosaico_angina_Europa}
 europa$exang_categorico <- factor(europa$exang, levels = c(0, 1), labels = c("No", "Si"))
 
 TD8 <- table(europa$num, europa$exang_categorico)
@@ -1037,7 +1037,7 @@ mosaicplot(
 
 Se procede con el cálculo del Odd's Ratio perteneciente a Europa, para evaluar la magnitud. 
 
-```{r Odds Angina EEUU}
+```{r odds_angina_EEUU}
 # No angina y sano: 175
 # No angina y enfermo: 97
 # Sí angina y sano: 20
@@ -1050,7 +1050,7 @@ Para el caso de Europa el Odd's ratio sugiere que las personas que presentaron a
 
 Para el caso de Estados Unidos, se tiene que:
 
-```{r Odds Angina Europa}
+```{r odds_angina_europa}
 # No angina y sano: 161
 # No angina y enfermo: 95
 # Sí angina y sano: 35
@@ -1061,7 +1061,7 @@ OR_angina_eeuu
 
 Para este caso las personas que presentaron angina inducida por ejercicio, tienen 7 veces más probabilidades de presentar la enfermedad que las personas que no presentaron dicho padecimiento.
 
-```{r Gráfico Mosaico Inclinación EEUU}
+```{r grafico_mosaico_inclinacion_EEUU}
 eeuu$slope_categorico <- as.factor(eeuu$slope)
 
 TD9 <- table(eeuu$num, eeuu$slope_categorico)
@@ -1083,7 +1083,7 @@ mosaicplot(
 
 Para el caso de Estados Unidos la prueba muestra un p-value menor al 5%, por lo que hay evidencia estadística para rechazar la hipótesis nula, lo que sugiere que hay evidencia de que las variables están relacionadas. 
 
-```{r Gráfico Mosaico Inclinación Europa}
+```{r grafico_mosaico_inclinacion_europa}
 europa$slope_categorico <- as.factor(europa$slope)
 
 TD10 <- table(europa$num, europa$slope_categorico)
@@ -1107,7 +1107,7 @@ Para el caso de Europa, se tiene el problema de poca muestra en el conteo de agu
 
 Por último se analiza la variable de ```thal```, la cual hace referencia a la Talasemia.
 
-```{r Gráfico Mosaico Talasemia EEUU}
+```{r grafico_mosaico_talasemia_EEUU}
 eeuu$thal_categorico <- as.factor(eeuu$thal)
 
 TD11 <- table(eeuu$num, eeuu$thal_categorico)
@@ -1129,7 +1129,7 @@ mosaicplot(
 
 Para el caso de Estados Unidos, se puede observar del gráfico de mosaico una gran diferencia, al aplicar la prueba de hipótesis, se tiene que la relación entre la variable talasemia y la variable respuesta es significativa, dada la evidencia estadística, es decir, se rechazó la hipótesis nula. 
 
-```{r Gráfico Mosaico Talasemia Europa}
+```{r grafico_mosaico_talasemia_europa}
 europa$thal_categorico <- as.factor(europa$thal)
 
 TD12 <- table(europa$num, europa$thal_categorico)
