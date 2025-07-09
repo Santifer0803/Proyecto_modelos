@@ -1528,6 +1528,101 @@ Entonces, se eliminan las observaciones del modelo en las que hay una concentrac
 
 Para el caso de Europa, aunque se mejora el BIC, las observaciones influyentes representan más de un $9\%$, lo cual se considera una cantidad considerable. En cambio, en este caso se suprimieron aquellas observaciones que eran influyentes en más de una métrica a la vez, resultando en una mejora del BIC original y dejando de considerar menos de un $3\%$ de los datos.
 
+A continuación, se intenta buscar algunas razones por las que existen una gran cantidad de observaciones influyentes.
+
+```{r observaciones_influyentes}
+# Se guardan las observaciones influyentes
+influyentes.eeuu <-
+  c(unname(which(metricas.eeuu$is.inf[, 6] == 1)), unname(which(metricas.eeuu$is.inf[, 7] == 1)), unname(which(metricas.eeuu$is.inf[, 9] == 1)))
+influyentes.europa <-
+  c(unname(which(metricas.europa$is.inf[, 6] == 1)), unname(which(metricas.europa$is.inf[, 8] == 1)))
+
+# Se guardan las observaciones que son influyentes
+df.influyentes.eeuu <-
+  as.data.frame(eeuu.train.limpio[sort(unique(influyentes.eeuu)), c("sex", "thalach", "oldpeak", "exang_categorico", "num")])
+df.influyentes.europa <-
+  as.data.frame(europa.train.limpio[sort(unique(influyentes.europa)), c("sex", "thalach", "exang_categorico", "num")])
+
+# Tabla
+sexo.influyentes.eeuu <-
+  table(df.influyentes.eeuu$num, df.influyentes.eeuu$sex)
+sexo.influyentes.europa <-
+  table(df.influyentes.europa$num, df.influyentes.europa$sex)
+
+# Se asignan nombres descriptivos
+dimnames(sexo.influyentes.eeuu) <- list("Enfermedad" = c("Sano", "Enfermo"),
+                                        "Sexo" = c("Mujer", "Hombre"))
+dimnames(sexo.influyentes.europa) <- list("Enfermedad" = c("Sano", "Enfermo"),
+                                          "Sexo" = c("Mujer", "Hombre"))
+
+# Gráfico del sexo según diagnóstico, en las variables influyentes
+mosaicplot(sexo.influyentes.eeuu,
+           color = c("#66c2a5", "#fc8d62"),
+           main = "")
+mosaicplot(sexo.influyentes.europa,
+           color = c("#66c2a5", "#fc8d62"),
+           main = "")
+
+# Gráfico de la depresión del segmento ST en relación al reposo, separado por diagnóstico
+ggplot(df.influyentes.eeuu, aes(x = num, y = oldpeak, fill = num)) +
+  geom_boxplot() +
+  labs(x = 'Diagnóstico', y = 'Depresión del segmento ST') +
+  scale_x_discrete("Diagnóstico", labels = c("Sano", "Enfermo")) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Gráfico del máximo ritmo cardíaco registrado, separado por diagnóstico
+ggplot(df.influyentes.eeuu, aes(x = num, y = thalach, fill = num)) +
+  geom_boxplot() +
+  labs(x = 'Diagnóstico', y = 'Máxima frecuencia cardíaca') +
+  scale_x_discrete("Diagnóstico", labels = c("Sano", "Enfermo")) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+ggplot(df.influyentes.europa, aes(x = num, y = thalach, fill = num)) +
+  geom_boxplot() +
+  labs(x = 'Diagnóstico', y = 'Máxima frecuencia cardíaca') +
+  scale_x_discrete("Diagnóstico", labels = c("Sano", "Enfermo")) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Tabla de angina y diagnóstico
+angina.influyentes.eeuu <-
+  table(df.influyentes.eeuu$num,
+        df.influyentes.eeuu$exang_categorico)
+angina.influyentes.europa <-
+  table(df.influyentes.europa$num,
+        df.influyentes.europa$exang_categorico)
+
+# Se asignan nombres descriptivos
+dimnames(angina.influyentes.eeuu) <-
+  list(
+    "Enfermedad" = c("Sano", "Enfermo"),
+    "Angina por Ejercicio" = c("No", "Si")
+  )
+dimnames(angina.influyentes.europa) <-
+  list(
+    "Enfermedad" = c("Sano", "Enfermo"),
+    "Angina por Ejercicio" = c("No", "Si")
+  )
+
+# Gráfico de angina después de hacer ejercicio
+mosaicplot(
+  angina.influyentes.eeuu,
+  color = c("#66c2a5", "#fc8d62"),
+  main = "",
+  las = 1
+)
+mosaicplot(
+  angina.influyentes.europa,
+  color = c("#66c2a5", "#fc8d62"),
+  main = "",
+  las = 1
+)
+```
+
+
+
 # Resultados del modelo
 
 Se obtienen los resultados de los modelos correspondientes.
@@ -1697,12 +1792,10 @@ mat.conf.eur <-
   confusionMatrix(clasificacion.eur, europa.test.limpio$num, positive = "1")
 
 # Métricas correspondientes para cada región
-cat("La acurracy (exactitud) en EEUU es: ", mat.conf.eeuu$overall["Accuracy"], "\n")
 cat("La sensibilidad en EEUU es: ", mat.conf.eeuu$byClass["Sensitivity"], "\n")
 cat("La especificidad en EEUUes: ", mat.conf.eeuu$byClass["Specificity"], "\n")
 cat("La precisión en EEUU es: ", mat.conf.eeuu$byClass["Precision"], "\n")
 
-cat("La acurracy (exactitud) en Europa es: ", mat.conf.eur$overall["Accuracy"], "\n")
 cat("La sensibilidad en Europa es: ", mat.conf.eur$byClass["Sensitivity"], "\n")
 cat("La especificidad en Europa es: ", mat.conf.eur$byClass["Specificity"], "\n")
 cat("La precisión en Europa es: ", mat.conf.eur$byClass["Precision"])
